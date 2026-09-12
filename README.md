@@ -26,21 +26,13 @@ This is primarily a monitoring dashboard. It does not currently upload files, st
 
 ## Setup
 
-1. Download or copy the project files into one folder, keeping these files together:
-
-   centauri-dashboard.html
-   centauri-dashboard.css
-   centauri-dashboard.js
-
-2. Open centauri-dashboard.html in your browser.
-
-3. In **Connection settings**, enter:
-
-   Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
-   Mainboard ID: The printer's Mainboard ID obtained from its interface or SDCP discovery. The dashboard does not discover this automatically.
-   Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
-
-4. Select **Connect**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
+- Download or copy the project files into one folder.
+- Open centauri-dashboard.html in your browser.
+- In **Connection settings**, enter:
+   - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
+   - Mainboard ID: The printer's Mainboard ID obtained from its interface or SDCP discovery. The dashboard does not discover this automatically.
+   - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
+- Select **Connect**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
 
 ## Using the dashboard
 
