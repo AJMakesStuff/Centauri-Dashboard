@@ -46,8 +46,8 @@ This is primarily a monitoring dashboard. It does not currently upload files, st
 
 The browser connects directly to these printer endpoints:
 
-SDCP status and commands: `ws://<printer-ip>:3030/websocket`
-Camera: `http://<printer-ip>:3031/video`
+- SDCP status and commands: `ws://<printer-ip>:3030/websocket`
+- Camera: `http://<printer-ip>:3031/video`
 
 The application requests status, attributes, and camera activation when the socket opens, and sends a heartbeat every 15 seconds. A camera URL returned by the printer takes precedence over the initially selected default or custom URL.
 
