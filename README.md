@@ -70,14 +70,6 @@ Settings are stored in browser local storage under `centauri-dashboard`. To rese
 - Chamber light does not respond: The control requires an active connection and firmware support for the SDCP light command. The button updates immediately; a later status message supplies the printer's reported light state.
 - Progress or finish time looks inaccurate: These values are estimates calculated from the printer's reported ticks, rather than independent measurements.
 
-## Project files
-
-`centauri-dashboard.html` | Dashboard layout, controls, and connection dialog.
-`centauri-dashboard.css` | Dark theme, responsive layout, and fullscreen styling.
-`centauri-dashboard.js` | SDCP communication, camera setup, status rendering, light control, reconnection, and saved settings.
-
-To customize the dashboard, edit these files and reload the page. No compilation is required.
-
 ## Credits
 
 Made with love by A.J. Richardson.
