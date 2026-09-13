@@ -2,7 +2,7 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## Unreleased
+## 1.0.0 (current)
 
 ### Added
 
@@ -14,6 +14,7 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 
 ### Changed
 
+- Grouped changes by semantic version, keeping entries in the current version until **NEW VERSION** is requested.
 - Renamed Mainboard ID to Serial Number in settings panel
 - Print controls overlay the camera's bottom-right corner in standard view and sit below the LIVE badge with spacing in fullscreen.
 - The print-control panel displays only buttons, with command feedback retained for screen readers.
