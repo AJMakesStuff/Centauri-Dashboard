@@ -14,38 +14,39 @@ The project uses plain HTML, CSS, and JavaScript. There is no build step, packag
 - Fullscreen camera view with a print-status and temperature overlay.
 - Automatic reconnection with retry delays increasing from 1.5 seconds to a maximum of 30 seconds, plus a manual refresh button.
 - Responsive dark interface and connection settings saved in the current browser.
+- Print control buttons.
 
-This is primarily a monitoring dashboard. It does not currently upload files, start, pause, or cancel prints, or change temperature targets.
+The compact print-control panel can stop, pause, and resume the current print. Play resumes a paused job; it does not start a new file. Play is enabled only for a paused job. All buttons are disabled without an active job, while disconnected, or while awaiting a command response. Pause is disabled while paused or transitioning. Settings includes switches for print controls, temperatures, and the entire stats panel that immediately save visibility in this browser. Hiding the stats panel hides job details and temperatures while keeping the camera buttons independent; the temperature preference is retained when the stats panel is shown again. Controls overlay the bottom-right corner of the camera in standard view and sit below LIVE with extra spacing in fullscreen. It does not currently upload files, start new prints, or change temperature targets.
+
+Print controls use commands 129 (pause), 130 (stop), and 131 (resume), as documented in the [Centauri Carbon API reference](https://docs.opencentauri.cc/software/api/#print-control-commands).
 
 ## Requirements
 
 - A powered-on Centauri Carbon printer reachable from your computer over the local network.
 - The printer's LAN IP address and Mainboard ID.
 - A printer interface that exposes the SDCP WebSocket endpoint and camera stream used below. Compatibility depends on the printer's firmware and available services.
-- A modern browser with JavaScript, WebSocket, local storage, and `crypto.randomUUID()` support.
 
 ## Setup
 
 - Download or copy the project files into one folder.
 - Open centauri-dashboard.html in your browser.
-- In **Connection settings**, enter:
+- In **Settings**, enter:
    - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
    - Mainboard ID: The printer's Mainboard ID obtained from its interface or SDCP discovery. The dashboard does not discover this automatically.
    - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
-- Select **Connect**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
+- Select **Save**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
 
 ## Using the dashboard
 
 - Select **Fullscreen** for a larger camera view. Select **Exit fullscreen** or press `Esc` to leave it.
 - Select the refresh arrow beside the connection indicator to reconnect manually.
-- Select the bulb beside **Chamber** to toggle the chamber light.
-- Open **Connection settings** to change the printer address, Mainboard ID, or camera URL.
+- Select the circular bulb button in the camera's top-right corner to toggle the chamber light. Use **Show chamber light button** in Settings to hide or show it independently of the stats panel.
+- Open **Settings** to change the printer address, Mainboard ID, or camera URL.
 - When there is no active print, the job panel shows a waiting message while temperature readings can still update.
 
 ## Connection details and storage
 
 The browser connects directly to these printer endpoints:
-
 - SDCP status and commands: `ws://<printer-ip>:3030/websocket`
 - Camera: `http://<printer-ip>:3031/video`
 
