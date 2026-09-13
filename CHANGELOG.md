@@ -2,7 +2,14 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.0 (Current)
+## 0.1.1 (Current)
+
+### Changed
+
+- Removed the Fullscreen and Settings text and replaced with icons
+- Removed Cancel button and replaced with close icon on Settings panel
+
+## 0.1.0
 
 ### Added
 
