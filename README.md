@@ -29,7 +29,7 @@ Print controls use commands 129 (pause), 130 (stop), and 131 (resume), as docume
 ## Setup
 
 - Download or copy the project files into one folder.
-- Open centauri-dashboard.html in your browser.
+- Open dashboard.html in your browser.
 - In **Settings**, enter:
    - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
    - Mainboard ID: The printer's Mainboard ID obtained from its interface or SDCP discovery. The dashboard does not discover this automatically.
@@ -52,7 +52,7 @@ The browser connects directly to these printer endpoints:
 
 The application requests status, attributes, and camera activation when the socket opens, and sends a heartbeat every 15 seconds. A camera URL returned by the printer takes precedence over the initially selected default or custom URL.
 
-Settings are stored in browser local storage under `centauri-dashboard`. To reset them, clear this site's local storage using your browser's developer tools or site-data settings. Using a different browser, hostname, or port creates a separate set of stored settings.
+Settings are stored in browser local storage under `dashboard`. To reset them, clear this site's local storage using your browser's developer tools or site-data settings. Using a different browser, hostname, or port creates a separate set of stored settings.
 
 ## Troubleshooting
 
