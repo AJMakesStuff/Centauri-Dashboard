@@ -14,6 +14,7 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 
 ### Changed
 
+- Renamed Mainboard ID to Serial Number in settings panel
 - Print controls overlay the camera's bottom-right corner in standard view and sit below the LIVE badge with spacing in fullscreen.
 - The print-control panel displays only buttons, with command feedback retained for screen readers.
 - Play is enabled only for a paused job. Controls are disabled without an active job, while disconnected, or while awaiting a command response; Pause is also disabled while paused or transitioning.
