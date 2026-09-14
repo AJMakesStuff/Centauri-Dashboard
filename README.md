@@ -99,3 +99,6 @@ The local `vendor/mqtt.min.js` browser bundle is [MQTT.js](https://github.com/mq
 ## Development checks
 
 With Node.js installed, run `node --test tests/protocol.test.cjs`. Tests simulate both transports, registration/authentication failures, command acknowledgements, partial updates, terminal states, camera overrides, and reconnect cleanup. They do not contact a printer or actuate hardware.
+
+## Disclaimer
+This project was developed through a combination of human-written code and AI-assisted development.
