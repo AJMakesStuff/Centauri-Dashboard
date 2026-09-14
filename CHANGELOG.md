@@ -2,11 +2,11 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## Work In Progress
+## 0.1.7 (Current)
 
-- Implementing EricReiche's nginx Docker Compose setup https://github.com/AJMakesStuff/Centauri-Dashboard/pull/1#issue-5446903916
+- Implemented EricReiche's nginx Docker Compose setup https://github.com/AJMakesStuff/Centauri-Dashboard/pull/1#issue-5446903916
 
-## 0.1.6 (Current)
+## 0.1.6
 
 ### Added
 
