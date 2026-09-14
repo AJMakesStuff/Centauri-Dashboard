@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.2.0 (Current)
+## 0.2.1 (Current)
+
+### Fixed
+
+- LIVE badge in Fullscreen was covered by controls panel
+
+## 0.2.0
 
 ## Added
 

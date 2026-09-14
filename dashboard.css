@@ -52,7 +52,7 @@ body {
     top: auto;
     left: auto;
     right: 18px;
-    bottom: 104px;
+    bottom: calc(var(--controls-panel-height, 74px) + 30px);
 }
 
 .shell:fullscreen.controls-hidden .live {

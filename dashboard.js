@@ -420,6 +420,12 @@ function connect() {
   };
 }
 const collapsedPanels = { stats: false, controls: false };
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(() => {
+    document.querySelector('.shell').style.setProperty(
+      '--controls-panel-height', `${$('printControlPanel').offsetHeight}px`);
+  }).observe($('printControlPanel'));
+}
 function updateFullscreenPanels() {
   const shell = document.querySelector('.shell');
   const fullscreen = !bothView && document.fullscreenElement === shell;
