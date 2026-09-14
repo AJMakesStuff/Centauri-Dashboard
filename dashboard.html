@@ -15,7 +15,13 @@
         <h1>Centauri Carbon</h1>
         <p class="sub">Local printer dashboard</p>
       </div>
-      <div class="button-group"><button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button></div>
+      <div class="button-group">
+        <div id="printerSwitch" class="printer-switch" role="group" aria-label="Active printer" hidden>
+          <button id="switchCC1" type="button" aria-pressed="false">CC1</button>
+          <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
+        </div>
+        <button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button>
+      </div>
     </header>
     <section class="camera" aria-label="Printer camera">
       <div class="empty" id="cameraEmpty">Connect your printer to start the live camera feed.</div>
@@ -26,11 +32,11 @@
       <div class="print-control-panel" id="printControlPanel">
         <div class="print-controls" role="group" aria-label="Print controls">
           <button id="stopPrint" class="stop-print" type="button" title="Stop the current print" disabled><span
-              aria-hidden="true">■</span> Stop</button>
+              aria-hidden="true">■</span></button>
           <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print" disabled><span
-              aria-hidden="true">▶</span> Play</button>
+              aria-hidden="true">▶</span></button>
           <button id="pausePrint" type="button" title="Pause the current print" disabled><span
-              aria-hidden="true">Ⅱ</span> Pause</button>
+              aria-hidden="true">Ⅱ</span></button>
         </div>
         <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
       </div>
@@ -84,7 +90,7 @@
           id="showLightToggle" type="checkbox" role="switch" checked /></label>
       <h3>Printer connection</h3>
       <p>Select your printer model and enter its LAN address and ID. Settings, including the CC2 access code, are saved
-        only in this browser.</p>
+        only in this browser. Save each printer once to enable the CC1 / CC2 switch on the dashboard.</p>
       <label for="printerModel">Printer model</label>
       <select id="printerModel">
         <option value="cc1">Centauri Carbon (CC1 · SDCP)</option>
@@ -95,7 +101,7 @@
       <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber" required
         pattern="[^/+#\s]+" placeholder="000000000001d354" />
       <div id="cc2Settings" hidden>
-        <label for="accessCode">LAN access code</label><input id="accessCode" type="password" autocomplete="off"
+        <label for="accessCode">LAN access code</label><input id="accessCode" type="text" autocomplete="off" spellcheck="false" autocapitalize="none"
           disabled />
         <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
           connects to MQTT on WebSocket port 9001.</p>

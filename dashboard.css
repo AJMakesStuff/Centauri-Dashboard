@@ -718,3 +718,29 @@ select {
         overflow: auto;
     }
 }
+
+.printer-switch {
+    display: flex;
+    gap: 4px;
+}
+
+.printer-switch[hidden] {
+    display: none;
+}
+
+.printer-switch button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+}
+
+.printer-switch button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width:540px) {
+    header {
+        flex-wrap: wrap;
+    }
+}

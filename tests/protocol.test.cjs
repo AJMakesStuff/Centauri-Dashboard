@@ -27,7 +27,7 @@ function setup(settings = {}, secureContext = true) {
     Date: class extends Date { static now() { return time; } },
     setTimeout(fn, ms) { timers.set(++timerId, { fn, ms }); return timerId; },
     clearTimeout(id) { timers.delete(id); }, setInterval() { return ++timerId; }, clearInterval() { },
-    localStorage: { getItem: () => JSON.stringify(settings), setItem() { } },
+    localStorage: { getItem: () => JSON.stringify(settings), setItem(key, value) { settings = JSON.parse(value); } },
     document: { getElementById: element, querySelector: element, addEventListener() { } }, addEventListener() { },
     mqtt: {
       connect(url, options) {
@@ -50,9 +50,51 @@ function setup(settings = {}, secureContext = true) {
     const client = clients.at(-1); client.emit('connect');
     receive({ error: 'ok' }, client.topics[0]);
   };
-  return { element, clients, sockets, run, tick, receive, register, timers };
+  return { element, clients, sockets, run, tick, receive, register, timers, stored: () => settings };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
+test('saving a second printer preserves the first and enables persistent quick switching', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board', cameraUrl: 'http://cc1/camera' });
+  assert.equal(t.element('printerSwitch').hidden, true);
+  t.element('settingsButton').onclick();
+  t.element('printerModel').value = 'cc2';
+  t.element('printerModel').onchange();
+  assert.equal(t.element('printerIp').value, '');
+  assert.equal(t.element('cameraUrl').value, '');
+  for (const key of ['printerIp', 'serialNumber', 'accessCode']) t.element(key).value = cc2[key];
+  t.element('settingsForm').onsubmit({ preventDefault() { } });
+  assert.equal(t.element('printerSwitch').hidden, false);
+  assert.equal(t.sockets[0].readyState, 3);
+  t.register();
+  assert.match(t.element('camera').src, /192.168.1.50:8080/);
+  t.receive({ method: 6000, result: status });
+  t.element('switchCC1').onclick();
+  assert.equal(t.clients[0].connected, false);
+  assert.equal(t.element('pausePrint').disabled, true);
+  assert.equal(t.element('nozzle').textContent, '—');
+  const socket = t.sockets.at(-1);
+  socket.readyState = 1; socket.onopen();
+  assert.equal(t.element('camera').src, 'http://cc1/camera');
+  assert.equal(JSON.parse(socket.sent[0]).Data.serialNumber, 'board');
+  const restored = setup(t.stored());
+  assert.equal(restored.element('printerSwitch').hidden, false);
+  restored.element('switchCC2').onclick();
+  assert.equal(restored.clients[0].options.password, 'test-code');
+  assert.equal(restored.stored().printerModel, 'cc2');
+});
+
+test('incomplete second profile hides switch and cancelling settings preserves saved profiles', () => {
+  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.2' } } });
+  assert.equal(t.element('printerSwitch').hidden, true);
+  t.element('settingsButton').onclick();
+  t.element('accessCode').value = 'unsaved';
+  t.element('printerModel').value = 'cc1'; t.element('printerModel').onchange();
+  t.element('printerModel').value = 'cc2'; t.element('printerModel').onchange();
+  assert.equal(t.element('accessCode').value, 'unsaved');
+  t.element('closeButton').onclick();
+  t.element('settingsButton').onclick();
+  assert.equal(t.element('accessCode').value, 'test-code');
+});
 test('CC1 over LAN HTTP starts camera and sends requests without randomUUID', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' }, false);
   const socket = t.sockets[0];

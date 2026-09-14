@@ -1,5 +1,33 @@
 const $ = id => document.getElementById(id);
 const saved = JSON.parse(localStorage.getItem('dashboard') || '{}');
+const connectionFields = ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode'];
+saved.printerModel = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
+saved.profiles ||= {};
+// Preserve connection details saved before separate printer profiles were introduced.
+if (!saved.profiles[saved.printerModel]) {
+  saved.profiles[saved.printerModel] = Object.fromEntries(connectionFields.map(key => [key, saved[key] || '']));
+}
+Object.assign(saved, saved.profiles[saved.printerModel]);
+let settingsDrafts, editingModel;
+function profileReady(model) {
+  const profile = saved.profiles[model];
+  return Boolean(profile?.printerIp && profile.serialNumber && (model !== 'cc2' || profile.accessCode));
+}
+function updatePrinterSwitch() {
+  $('printerSwitch').hidden = !(profileReady('cc1') && profileReady('cc2'));
+  $('switchCC1').setAttribute('aria-pressed', String(saved.printerModel === 'cc1'));
+  $('switchCC2').setAttribute('aria-pressed', String(saved.printerModel === 'cc2'));
+}
+function selectPrinter(model) {
+  if (saved.printerModel === model || !profileReady(model)) return;
+  stopConnection();
+  saved.printerModel = model;
+  for (const key of connectionFields) saved[key] = saved.profiles[model][key] || '';
+  localStorage.setItem('dashboard', JSON.stringify(saved));
+  retryDelay = 1500;
+  updatePrinterSwitch();
+  connect();
+}
 let socket, reconnectTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
 const states = { 0: 'Idle', 1: 'Printing', 2: 'Transferring', 3: 'Calibrating', 4: 'Testing' };
 let controlsConnected = false, printStatus = null, activePrint = false, pendingControl;
@@ -115,6 +143,7 @@ function connect() {
   let connectionError = '';
   $('camera').removeAttribute('src'); $('camera').hidden = true; $('cameraEmpty').hidden = false;
   updateStatus({ Status: { CurrentStatus: 0 } });
+  updateLightState(false);
   try { active = socket = cc2 ? new CC2Connection(saved) : new WebSocket(`ws://${saved.printerIp}:3030/websocket`); } catch { return setConnection('Invalid connection settings or missing protocol library.'); }
   setConnection('Connecting to printer…');
   active.onopen = () => {
@@ -165,12 +194,22 @@ function updateModelSettings() {
   $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
 }
 function openSettings() {
-  for (const key of ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode']) $(key).value = saved[key] || '';
-  $('printerModel').value = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
+  settingsDrafts = JSON.parse(JSON.stringify(saved.profiles));
+  editingModel = saved.printerModel;
+  $('printerModel').value = editingModel;
+  for (const key of connectionFields) $(key).value = settingsDrafts[editingModel]?.[key] || '';
   updateModelSettings();
   $('settingsDialog').showModal();
 }
-$('printerModel').onchange = updateModelSettings;
+$('printerModel').onchange = () => {
+  settingsDrafts[editingModel] = Object.fromEntries(connectionFields.map(key => [key, $(key).value]));
+  editingModel = $('printerModel').value;
+  for (const key of connectionFields) $(key).value = settingsDrafts[editingModel]?.[key] || '';
+  updateModelSettings();
+};
+$('switchCC1').onclick = () => selectPrinter('cc1');
+$('switchCC2').onclick = () => selectPrinter('cc2');
+updatePrinterSwitch();
 $('settingsButton').onclick = openSettings;
 $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightState(next); send(403, { LightStatus: { SecondLight: next ? 1 : 0 } }); };
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
@@ -188,7 +227,19 @@ document.addEventListener('fullscreenchange', () => {
   else $('camera').after($('lightToggle'));
 });
 $('closeButton').onclick = () => $('settingsDialog').close();
-$('settingsForm').onsubmit = e => { e.preventDefault(); saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim(); localStorage.setItem('dashboard', JSON.stringify(saved)); $('settingsDialog').close(); stopConnection(); connect(); };
+$('settingsForm').onsubmit = e => {
+  e.preventDefault();
+  stopConnection();
+  saved.printerModel = $('printerModel').value;
+  const profile = Object.fromEntries(connectionFields.map(key => [key, $(key).value.trim()]));
+  saved.profiles[saved.printerModel] = profile;
+  Object.assign(saved, profile);
+  localStorage.setItem('dashboard', JSON.stringify(saved));
+  $('settingsDialog').close();
+  retryDelay = 1500;
+  updatePrinterSwitch();
+  connect();
+};
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
 addEventListener('pagehide', stopConnection);
 connect();
