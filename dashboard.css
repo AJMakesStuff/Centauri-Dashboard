@@ -659,7 +659,8 @@ label {
     color: #c6d1df;
 }
 
-input {
+input,
+select {
     width: 100%;
     border: 1px solid var(--line);
     background: #091018;

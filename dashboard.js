@@ -6,7 +6,7 @@ let controlsConnected = false, printStatus = null, activePrint = false, pendingC
 function updatePrintControls() {
   const ready = controlsConnected && socket?.readyState === WebSocket.OPEN && !pendingControl;
   $('resumePrint').disabled = !ready || !activePrint || printStatus !== 6;
-  $('pausePrint').disabled = !ready || !activePrint || [5, 6, 7].includes(printStatus);
+  $('pausePrint').disabled = !ready || !activePrint || [5, 6, 7, 12].includes(printStatus);
   $('stopPrint').disabled = !ready || !activePrint || printStatus === 7;
 }
 function resetPrintControls(connected) {
@@ -48,7 +48,7 @@ function handlePrintResponse(raw) {
   send(0, {});
 }
 const show = (id, value) => $(id).textContent = value ?? '—';
-const degrees = value => Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°` : '—';
+const degrees = value => value != null && Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°` : '—';
 const duration = value => {
   if (!Number.isFinite(value) || value <= 0) return '—';
   const hours = Math.floor(value / 3600), minutes = Math.ceil((value % 3600) / 60);
@@ -80,10 +80,11 @@ function updateStatus(raw) {
     activePrint = hasActiveJob;
     updatePrintControls();
   }
-  const percent = hasActiveJob && total > 0 ? Math.min(100, Math.round(current / total * 100)) : null;
-  show('machineStatus', hasActiveJob ? ({ 5: 'Pausing', 6: 'Paused', 7: 'Stopping' }[printCode] || states[machineCode] || 'Printing') : 'Waiting for a print');
+  const reportedProgress = info.Progress == null ? NaN : Number(info.Progress);
+  const percent = hasActiveJob && Number.isFinite(reportedProgress) ? Math.max(0, Math.min(100, Math.round(reportedProgress))) : hasActiveJob && total > 0 ? Math.min(100, Math.round(current / total * 100)) : null;
+  show('machineStatus', hasActiveJob ? ({ 5: 'Pausing', 6: 'Paused', 7: 'Stopping', 12: 'Resuming' }[printCode] || states[machineCode] || 'Printing') : 'Waiting for a print');
   show('filename', hasActiveJob ? info.Filename : 'Waiting for a print…'); show('progress', percent === null ? '—' : `${percent}%`); $('progressFill').style.width = `${percent || 0}%`;
-  const remaining = total - current;
+  const remaining = info.RemainingSeconds == null ? total - current : Number(info.RemainingSeconds);
   show('layer', hasActiveJob ? `Layer ${info.CurrentLayer ?? '—'} / ${info.TotalLayer ?? '—'}` : 'Ready when you are'); show('remaining', hasActiveJob ? `Finishes ${finishTime(remaining)} · ${duration(remaining)} left` : 'No print queued');
   show('nozzle', degrees(s.TempOfNozzle)); show('nozzleTarget', degrees(s.TempTargetNozzle));
   show('bed', degrees(s.TempOfHotbed)); show('bedTarget', degrees(s.TempTargetHotbed)); show('chamber', degrees(s.TempOfBox));
@@ -96,27 +97,31 @@ function stopConnection() {
   if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); socket = undefined; }
 }
 function connect() {
-  clearTimeout(reconnectTimer); if (!saved.printerIp || !saved.serialNumber) return $('settingsDialog').showModal();
+  clearTimeout(reconnectTimer); if (!saved.printerIp || !saved.serialNumber || (saved.printerModel === 'cc2' && !saved.accessCode)) return openSettings();
   const version = ++connectionVersion;
   clearInterval(heartbeatTimer); heartbeatTimer = undefined;
   if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); }
   let active;
-  try { active = socket = new WebSocket(`ws://${saved.printerIp}:3030/websocket`); } catch { return setConnection('Invalid connection settings.'); }
+  const cc2 = saved.printerModel === 'cc2';
+  let connectionError = '';
+  $('camera').removeAttribute('src'); $('camera').hidden = true; $('cameraEmpty').hidden = false;
+  updateStatus({ Status: { CurrentStatus: 0 } });
+  try { active = socket = cc2 ? new CC2Connection(saved) : new WebSocket(`ws://${saved.printerIp}:3030/websocket`); } catch { return setConnection('Invalid connection settings or missing protocol library.'); }
   setConnection('Connecting to printer…');
   active.onopen = () => {
     if (version !== connectionVersion) return;
     retryDelay = 1500; setConnection('Receiving live printer status.', true);
     send(0, {}, active); send(1, {}, active); send(386, { Enable: 1 }, active);
-    startCamera(saved.cameraUrl || `${saved.printerIp}:3031/video`);
+    startCamera(saved.cameraUrl || `${saved.printerIp}:${cc2 ? '8080/?action=stream' : '3031/video'}`);
     heartbeatTimer = setInterval(() => { if (socket === active && active.readyState === WebSocket.OPEN) active.send('ping'); }, 15000);
   };
-  active.onmessage = e => { if (version !== connectionVersion || e.data === 'pong') return; try { const data = JSON.parse(e.data); handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video) startCamera(video); updateStatus(data); } catch { } };
-  active.onerror = () => { if (version === connectionVersion) setConnection('Connection issue detected; attempting to recover…'); };
+  active.onmessage = e => { if (version !== connectionVersion || e.data === 'pong') return; try { const data = JSON.parse(e.data); handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data); } catch { } };
+  active.onerror = event => { if (version === connectionVersion) { connectionError = cc2 ? event.message || 'CC2 connection failed.' : ''; setConnection(connectionError || 'Connection issue detected; attempting to recover…'); } };
   active.onclose = () => {
     if (version !== connectionVersion) return;
     clearInterval(heartbeatTimer); heartbeatTimer = undefined; socket = undefined;
     const wait = retryDelay; retryDelay = Math.min(retryDelay * 2, 30000);
-    setConnection(`Connection lost. Retrying in ${Math.ceil(wait / 1000)} seconds…`);
+    setConnection(`${connectionError || 'Connection lost.'} Retrying in ${Math.ceil(wait / 1000)} seconds…`);
     reconnectTimer = setTimeout(connect, wait);
   };
 }
@@ -142,7 +147,22 @@ for (const setting of ['showPrintControls', 'showTemperatures', 'showStatsPanel'
   };
 }
 applyControlVisibility();
-$('settingsButton').onclick = () => { $('printerIp').value = saved.printerIp || ''; $('serialNumber').value = saved.serialNumber || ''; $('cameraUrl').value = saved.cameraUrl || ''; $('settingsDialog').showModal(); };
+function updateModelSettings() {
+  const cc2 = $('printerModel').value === 'cc2';
+  $('cc2Settings').hidden = !cc2;
+  $('accessCode').required = cc2;
+  $('accessCode').disabled = !cc2;
+  $('serialLabel').textContent = cc2 ? 'Printer serial number (SN)' : 'Serial Number';
+  $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
+}
+function openSettings() {
+  for (const key of ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode']) $(key).value = saved[key] || '';
+  $('printerModel').value = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
+  updateModelSettings();
+  $('settingsDialog').showModal();
+}
+$('printerModel').onchange = updateModelSettings;
+$('settingsButton').onclick = openSettings;
 $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightState(next); send(403, { LightStatus: { SecondLight: next ? 1 : 0 } }); };
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
 $('resumePrint').onclick = () => controlPrint(131, 'resumePrint', 'Resume');
@@ -159,7 +179,7 @@ document.addEventListener('fullscreenchange', () => {
   else $('camera').after($('lightToggle'));
 });
 $('closeButton').onclick = () => $('settingsDialog').close();
-$('settingsForm').onsubmit = e => { e.preventDefault(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim(); localStorage.setItem('dashboard', JSON.stringify(saved)); $('settingsDialog').close(); stopConnection(); connect(); };
+$('settingsForm').onsubmit = e => { e.preventDefault(); saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim(); localStorage.setItem('dashboard', JSON.stringify(saved)); $('settingsDialog').close(); stopConnection(); connect(); };
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
 addEventListener('pagehide', stopConnection);
 connect();

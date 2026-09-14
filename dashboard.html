@@ -83,16 +83,30 @@
       <label class="toggle-setting" for="showLightToggle"><span>Show chamber light button</span><input
           id="showLightToggle" type="checkbox" role="switch" checked /></label>
       <h3>Printer connection</h3>
-      <p>Enter the printer’s LAN IP and Serial Number. The ID is supplied by SDCP discovery/the printer interface. These
-        values stay only in this browser.</p>
+      <p>Select your printer model and enter its LAN address and ID. Settings, including the CC2 access code, are saved
+        only in this browser.</p>
+      <label for="printerModel">Printer model</label>
+      <select id="printerModel">
+        <option value="cc1">Centauri Carbon (CC1 · SDCP)</option>
+        <option value="cc2">Centauri Carbon 2 (CC2 · MQTT)</option>
+      </select>
       <label for="printerIp">Printer IP address</label><input id="printerIp" required placeholder="192.168.1.50"
         pattern="[A-Za-z0-9.:-]+" />
-      <label for="serialNumber">Serial Number</label><input id="serialNumber" required placeholder="000000000001d354" />
+      <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber" required
+        pattern="[^/+#\s]+" placeholder="000000000001d354" />
+      <div id="cc2Settings" hidden>
+        <label for="accessCode">LAN access code</label><input id="accessCode" type="password" autocomplete="off"
+          disabled />
+        <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
+          connects to MQTT on WebSocket port 9001.</p>
+      </div>
       <label for="cameraUrl">Camera URL (optional override)</label><input id="cameraUrl"
         placeholder="http://192.168.1.50:3031/video" />
       <div class="actions"><button class="primary" type="submit">Save</button></div>
     </form>
   </dialog>
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="cc2.js"></script>
   <script src="dashboard.js"></script>
 </body>
 

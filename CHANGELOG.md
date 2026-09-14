@@ -2,7 +2,23 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.1 (Current)
+## 0.1.2 (Current)
+
+### Added
+
+- CC1/CC2 model selector and saved CC2 LAN access code.
+- CC2 MQTT over WebSocket connection with authentication, registration, keepalives, request spacing, and reconnect cleanup.
+- CC2 status, temperatures, camera, light, and pause/stop/resume support, including partial status updates and native progress/time estimates.
+- Locally bundled MQTT.js 5.14.1 with its MIT license.
+- Simulated protocol regression checks for CC1 and CC2. Live CC2 hardware verification remains outstanding.
+
+### Fixed
+
+- Custom camera URLs retain precedence over printer-reported URLs.
+- Missing temperatures no longer render as zero degrees.
+- Pause stays disabled during resuming.
+
+## 0.1.1
 
 ### Changed
 
