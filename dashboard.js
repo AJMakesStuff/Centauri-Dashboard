@@ -107,6 +107,45 @@ function mainboardIdFrom(raw) {
   const candidate = raw?.Data?.MainboardID ?? raw?.MainboardID ?? topic;
   return typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate) ? candidate : undefined;
 }
+let serialProbe, serialProbeDebounce, serialProbeTimeout;
+function cancelSerialProbe(pending = false) {
+  clearTimeout(serialProbeDebounce); clearTimeout(serialProbeTimeout);
+  serialProbeDebounce = serialProbeTimeout = undefined;
+  if (serialProbe) { serialProbe.onopen = serialProbe.onmessage = serialProbe.onerror = serialProbe.onclose = null; serialProbe.close(); serialProbe = undefined; }
+  if (pending) setDiscoveryPending(false);
+}
+// Ask the printer for its ID while the form is still open, so the field fills itself in.
+function probeSerial(ip) {
+  cancelSerialProbe();
+  if ($('printerModel').value === 'cc2' || !looksLikeAddress(ip)) return setDiscoveryPending(false);
+  // Don't compete for the printer's connection slots with a session that is already live.
+  if (socket?.readyState === WebSocket.OPEN && saved.printerIp === ip) return setDiscoveryPending(false);
+  setDiscoveryPending(true);
+  let probe;
+  try { probe = new WebSocket(`ws://${ip}:3030/websocket`); } catch { return setDiscoveryPending(false); }
+  serialProbe = probe;
+  const finish = () => { if (serialProbe === probe) cancelSerialProbe(true); };
+  serialProbeTimeout = setTimeout(finish, SERIAL_DISCOVERY_TIMEOUT);
+  probe.onmessage = event => {
+    if (event.data === 'pong') return;
+    let data; try { data = JSON.parse(event.data); } catch { return; }
+    const serialNumber = mainboardIdFrom(data);
+    if (!serialNumber) return;
+    $('serialNumber').value = serialNumber; $('settingsNotice').hidden = true;
+    finish();
+  };
+  probe.onerror = finish; probe.onclose = finish;
+}
+function scheduleSerialProbe() {
+  clearTimeout(serialProbeDebounce); serialProbeDebounce = undefined;
+  cancelSerialProbe(true);
+  const ip = $('printerIp').value.trim();
+  serialProbeDebounce = setTimeout(() => probeSerial(ip), SERIAL_PROBE_DELAY);
+}
+const SERIAL_PROBE_DELAY = 700;
+function looksLikeAddress(value) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(value) || /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(value);
+}
 let settingsPendingClose = false;
 function setDiscoveryPending(pending) {
   $('serialSpinner').hidden = !pending;
@@ -126,6 +165,7 @@ function stopConnection() {
 }
 function connect() {
   clearTimeout(reconnectTimer);
+  cancelSerialProbe();
   const cc2 = saved.printerModel === 'cc2';
   // CC2 needs its serial number up front because it forms part of the MQTT topic it
   // publishes to. CC1 can start with none and ask the printer for it.
@@ -216,6 +256,8 @@ function updateModelSettings() {
   $('serialNumber').required = cc2;
   $('serialHint').hidden = cc2;
   $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
+  if (cc2) cancelSerialProbe(true);
+  else if ($('settingsDialog').open) scheduleSerialProbe();
 }
 function openSettings(notice = '') {
   for (const key of ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode']) $(key).value = saved[key] || '';
@@ -225,6 +267,7 @@ function openSettings(notice = '') {
   $('settingsDialog').showModal();
 }
 $('printerModel').onchange = updateModelSettings;
+$('printerIp').addEventListener('input', scheduleSerialProbe);
 $('settingsButton').onclick = () => openSettings();
 $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightState(next); send(403, { LightStatus: { SecondLight: next ? 1 : 0 } }); };
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');

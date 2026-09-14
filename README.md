@@ -41,7 +41,7 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 - Open dashboard.html in your browser.
 - In **Settings**, enter:
    - Printer model: **Centauri Carbon (CC1)** or **Centauri Carbon 2 (CC2)**. Existing settings default to CC1.
-   - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
+   - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port. On CC1, editing this field starts looking for the printer's ID right away; the spinner in the Serial Number field shows it working, and the ID appears there before you save.
    - Serial Number: For CC1, leave this **blank** and the dashboard reads the printer's ID from the connection and saves it. Enter it manually (the printer shows it in its interface, or use SDCP discovery) if you prefer. The printer only announces the ID while it is idle or printing, so a paused or stopped printer needs the manual value. For CC2, the SN is required: it forms part of the MQTT topic.
    - LAN access code (CC2 only): The code shown on the printer touchscreen.
    - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.

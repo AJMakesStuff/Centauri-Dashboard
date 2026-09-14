@@ -263,3 +263,28 @@ test('discovery that cannot reach the printer says so in the open dialog', () =>
   assert.equal(t.element('settingsDialog').open, true);
   assert.match(t.element('settingsNotice').textContent, /Could not reach 192\.168\.20\.250/);
 });
+
+test('editing the printer address probes for the ID and fills the field without saving', () => {
+  const t = setup({});
+  t.element('printerIp').value = '192.168.20.129';
+  t.element('printerIp').events.input();
+  const debounce = [...t.timers.values()].find(timer => timer.ms === 700);
+  assert.ok(debounce, 'the probe is debounced');
+  assert.equal(t.sockets.length, 0);
+  debounce.fn();
+  assert.equal(t.sockets.length, 1);
+  assert.equal(t.sockets[0].url, 'ws://192.168.20.129:3030/websocket');
+  assert.equal(t.element('serialSpinner').hidden, false);
+  t.sockets[0].onmessage({ data: JSON.stringify({ MainboardID: '000000000001d354', Topic: 'sdcp/status/000000000001d354' }) });
+  assert.equal(t.element('serialNumber').value, '000000000001d354');
+  assert.equal(t.element('serialSpinner').hidden, true);
+});
+
+test('a half-typed printer address is not probed', () => {
+  const t = setup({});
+  t.element('printerIp').value = '192.168.';
+  t.element('printerIp').events.input();
+  [...t.timers.values()].find(timer => timer.ms === 700).fn();
+  assert.equal(t.sockets.length, 0);
+  assert.equal(Boolean(t.element('serialSpinner').hidden), true);
+});
