@@ -47,6 +47,26 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
    - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
 - Select **Save**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
 
+## Run with Docker (optional)
+
+The dashboard is static files, so any web server works. If you would rather not set one up by hand:
+
+```bash
+docker compose up -d
+```
+
+Then open <http://localhost:8080>.
+
+This runs `nginx:alpine` with the project folder mounted read-only. `nginx.conf` serves `dashboard.html` at `/`, disables directory listings, sends `Cache-Control: no-cache` for the application files so a stale page never pairs with a newer `dashboard.js`, and refuses requests for dotfiles such as `.git`.
+
+Notes:
+
+- The host port is **8080**, not 80, to avoid colliding with anything already listening on port 80 (XAMPP, for example). Change the left side of `"8080:80"` in `docker-compose.yml` for a different port.
+- Keep it on plain HTTP. The printer endpoints are `ws://` and `http://`, so an HTTPS origin causes mixed-content failures.
+- The container does not need to reach the printer. The browser connects to the printer directly; the container only serves files.
+- Stop it with `docker compose down`.
+- On an SELinux host (Fedora, RHEL), append `:z` to both volume mounts.
+
 ## Using the dashboard
 
 - Select **Fullscreen** for a larger camera view. Select **Exit fullscreen** or press `Esc` to leave it.

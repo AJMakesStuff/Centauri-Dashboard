@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    image: nginx:alpine
+    # Static files only — nothing is built inside the container.
+    ports:
+      # Host port 8080 on purpose: 80 is often already taken (XAMPP, another
+      # dev server). Change the left side if you want a different port.
+      - "8080:80"
+    volumes:
+      # The dashboard is plain HTML/CSS/JS, so nginx serves this folder as-is.
+      - ./:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
