@@ -937,3 +937,200 @@ select {
 .device-control-inputs button:disabled, .device-control-inputs input:disabled { opacity: .45; cursor: not-allowed; }
 .device-hint { font-size: .7rem; line-height: 1.4; }
 #controlsPanelContent { max-height: min(480px, 65vh); overflow-y: auto; }
+
+/* Phone layout: keep the feed clear and put controls in the page flow. */
+@media (max-width: 720px) {
+    .shell:not(:fullscreen) {
+        padding: 16px max(12px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        min-height: 100svh;
+    }
+
+    .shell:not(:fullscreen) header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .shell:not(:fullscreen) header > .button-group { display: contents; }
+    .shell:not(:fullscreen) header > div:first-child { grid-column: 1; grid-row: 1; }
+    .shell:not(:fullscreen) #settingsButton { grid-column: 3; grid-row: 1; }
+    .shell:not(:fullscreen) #fullscreenButton { grid-column: 2; grid-row: 1; min-width: 44px; min-height: 44px; }
+    .shell:not(:fullscreen) .printer-switch {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        padding: 4px;
+        background: #101923;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+    }
+    .printer-switch button { flex: 1; min-height: 44px; }
+    #settingsButton, #closeButton, .refresh-button, .light-toggle { min-width: 44px; min-height: 44px; }
+
+    .shell:not(:fullscreen) .camera {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        aspect-ratio: auto;
+        border-radius: 14px;
+    }
+    .shell:not(:fullscreen) .camera img,
+    .shell:not(:fullscreen) .camera .empty {
+        grid-column: 1;
+        grid-row: 1;
+        position: static;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        min-width: 0;
+    }
+    .shell:not(:fullscreen) .camera .empty { padding: 64px 24px; }
+    .shell:not(:fullscreen) .print-control-panel {
+        position: static;
+        grid-row: 2;
+        width: 100%;
+        max-width: none;
+        padding: 12px;
+        border: 0;
+        border-top: 1px solid var(--line);
+        border-radius: 0;
+        background: #101923;
+    }
+    .shell:not(:fullscreen) #controlsPanelContent { max-height: none; overflow: visible; }
+    .print-control-panel .print-controls button { height: 48px; }
+    .device-panel summary { min-height: 44px; padding: 14px 2px; }
+    .device-control-inputs input, .device-control-inputs button { min-height: 44px; font-size: 1rem; }
+    .device-control-row { margin-bottom: 16px; }
+    .device-control-row label { flex-wrap: wrap; gap: 4px; }
+
+    .shell:not(:fullscreen) .overlay { margin-top: 12px; padding: 14px; gap: 20px; }
+    .job-details, .temperatures { min-width: 0; }
+    .shell:not(:fullscreen) .job-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+    .details { flex-wrap: wrap; }
+    .stat-grid { gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat { padding: 10px 7px; }
+    .stat .value { font-size: 1.1rem; }
+    .stat .label { letter-spacing: .04em; }
+    .target-temperature { overflow-wrap: anywhere; }
+    .status { align-items: flex-start; line-height: 1.5; overflow-wrap: anywhere; }
+    .status > .dot { flex-shrink: 0; margin-top: 6px; }
+    footer { flex-wrap: wrap; gap: 5px; margin-top: 24px; }
+    .both-printers { gap: 12px; }
+    .embedded-dashboard .shell:not(:fullscreen) { min-height: 0; padding: 12px; }
+
+    dialog {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - max(12px, env(safe-area-inset-top)));
+        margin: auto 0 0;
+        padding: 18px max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        border-radius: 20px 20px 0 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    dialog input, dialog select { font-size: 16px; min-height: 44px; }
+    dialog .toggle-setting input { min-height: 22px; flex-shrink: 0; }
+    dialog .actions button { width: 100%; min-height: 48px; }
+}
+
+/* Mobile fullscreen reserves space for the feed; panels never float over it.
+   The short landscape breakpoint also covers phones rotated sideways. */
+@media (max-width: 720px), (max-width: 960px) and (max-height: 600px) {
+    .shell:fullscreen {
+        height: 100dvh;
+        min-height: 0;
+        overflow-y: auto;
+        padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        overscroll-behavior: contain;
+    }
+    .shell:fullscreen header {
+        position: static;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .shell:fullscreen header .sub { display: none; }
+    .shell:fullscreen .button-group { flex-wrap: wrap; }
+    .shell:fullscreen .button-group button { min-width: 44px; min-height: 44px; }
+    .shell:not(.both-view):fullscreen .camera {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: min(56dvh, 72vw) auto;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+    }
+    .shell:fullscreen .camera img,
+    .shell:fullscreen .camera .empty {
+        position: static;
+        grid-area: 1 / 1;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+    .shell:fullscreen .camera .empty { padding: 48px 20px 20px; }
+    .shell:fullscreen .live,
+    .shell:fullscreen.controls-hidden .live,
+    .shell:fullscreen.fullscreen-controls-collapsed .live {
+        top: 10px;
+        left: 10px;
+        right: auto;
+        bottom: auto;
+    }
+    .shell:fullscreen .print-control-panel,
+    .shell:fullscreen .overlay {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        padding: 0;
+        transform: none;
+        transition: none;
+        background: #101923;
+        border: 1px solid var(--line);
+    }
+    .shell:fullscreen .print-control-panel {
+        grid-area: 2 / 1;
+        border-width: 1px 0 0;
+        border-radius: 0;
+    }
+    .shell:fullscreen .overlay { margin-top: 12px; }
+    .shell:fullscreen .panel-toggle:not([hidden]) {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        min-height: 44px;
+        padding: 12px 40px 12px 14px;
+        text-align: left;
+        display: block;
+        font-size: 0;
+    }
+    .shell:fullscreen .panel-toggle::before {
+        left: auto;
+        right: 18px;
+        transform: rotate(135deg);
+    }
+    .shell:fullscreen .panel-toggle[aria-expanded="false"]::before { transform: rotate(45deg); }
+    .shell:fullscreen .panel-toggle::after { font-size: .85rem; font-weight: 600; }
+    .shell:fullscreen .controls-panel-toggle::after { content: 'Print controls'; }
+    .shell:fullscreen .stats-panel-toggle::after { content: 'Current job & temperatures'; }
+    .shell:fullscreen #controlsPanelContent,
+    .shell:fullscreen #statsPanelContent { max-height: none; overflow: visible; padding: 0 12px 12px; }
+    .shell:fullscreen .overlay.fullscreen-collapsed,
+    .shell:fullscreen .print-control-panel.fullscreen-collapsed {
+        transform: none;
+        background: #101923;
+        border-color: var(--line);
+    }
+    .shell:fullscreen .fullscreen-collapsed > #controlsPanelContent,
+    .shell:fullscreen .fullscreen-collapsed > #statsPanelContent { display: none; }
+    .shell:fullscreen .job-title { white-space: normal; overflow-wrap: anywhere; }
+    .shell:fullscreen .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .shell:fullscreen .details { flex-wrap: wrap; }
+    .shell:fullscreen .print-controls button { height: 48px; }
+    .shell:fullscreen .device-panel summary { min-height: 44px; }
+    .shell:fullscreen .device-control-inputs input,
+    .shell:fullscreen .device-control-inputs button { min-height: 44px; font-size: 16px; }
+}

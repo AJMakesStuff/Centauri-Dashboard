@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.2.1 (Current)
+## 0.3.0 (Current)
+
+### Added
+
+- Mobile specific layout
+
+## 0.2.1
 
 ### Fixed
 
