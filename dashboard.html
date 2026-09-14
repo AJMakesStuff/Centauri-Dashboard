@@ -74,6 +74,7 @@
       <div class="settings-header">
         <h2>Settings</h2><button type="button" id="closeButton">🗙</button>
       </div>
+      <p id="settingsNotice" class="settings-notice" hidden></p>
       <label class="toggle-setting" for="showPrintControls"><span>Show print controls</span><input
           id="showPrintControls" type="checkbox" role="switch" checked /></label>
       <label class="toggle-setting" for="showTemperatures"><span>Show temperatures</span><input id="showTemperatures"
@@ -83,8 +84,8 @@
       <label class="toggle-setting" for="showLightToggle"><span>Show chamber light button</span><input
           id="showLightToggle" type="checkbox" role="switch" checked /></label>
       <h3>Printer connection</h3>
-      <p>Select your printer model and enter its LAN address and ID. Settings, including the CC2 access code, are saved
-        only in this browser.</p>
+      <p>Select your printer model and enter its LAN address. The Centauri Carbon's ID is detected automatically; the
+        CC2 needs its serial number and access code. Settings are saved only in this browser.</p>
       <label for="printerModel">Printer model</label>
       <select id="printerModel">
         <option value="cc1">Centauri Carbon (CC1 · SDCP)</option>
@@ -92,8 +93,10 @@
       </select>
       <label for="printerIp">Printer IP address</label><input id="printerIp" required placeholder="192.168.1.50"
         pattern="[A-Za-z0-9.:-]+" />
-      <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber" required
+      <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber"
         pattern="[^/+#\s]+" placeholder="000000000001d354" />
+      <p id="serialHint">Optional on the Centauri Carbon. Leave it blank and the dashboard reads the ID from the printer
+        once it connects.</p>
       <div id="cc2Settings" hidden>
         <label for="accessCode">LAN access code</label><input id="accessCode" type="password" autocomplete="off"
           disabled />

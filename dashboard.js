@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const saved = JSON.parse(localStorage.getItem('dashboard') || '{}');
-let socket, reconnectTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
+let socket, reconnectTimer, discoveryTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
 const states = { 0: 'Idle', 1: 'Printing', 2: 'Transferring', 3: 'Calibrating', 4: 'Testing' };
 let controlsConnected = false, printStatus = null, activePrint = false, pendingControl;
 function updatePrintControls() {
@@ -99,19 +99,37 @@ function updateStatus(raw) {
   show('bed', degrees(s.TempOfHotbed)); show('bedTarget', degrees(s.TempTargetHotbed)); show('chamber', degrees(s.TempOfBox));
   if (s.LightStatus && 'SecondLight' in s.LightStatus) updateLightState(Number(s.LightStatus.SecondLight) === 1 || s.LightStatus.SecondLight === true);
 }
+// CC1 announces its MainboardID in the topic of the frames it pushes on connect, so the
+// dashboard can read it from the printer rather than make the user go and find it.
+const SERIAL_DISCOVERY_TIMEOUT = 8000;
+function mainboardIdFrom(raw) {
+  const topic = typeof raw?.Topic === 'string' ? raw.Topic.replace(/^sdcp\/[a-z]+\//i, '') : '';
+  const candidate = raw?.Data?.MainboardID ?? raw?.MainboardID ?? topic;
+  return typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate) ? candidate : undefined;
+}
+function startSession(active, cc2) {
+  setConnection('Receiving live printer status.', true);
+  send(0, {}, active); send(1, {}, active); send(386, { Enable: 1 }, active);
+  startCamera(saved.cameraUrl || `${saved.printerIp}:${cc2 ? '8080/?action=stream' : '3031/video'}`);
+  heartbeatTimer = setInterval(() => { if (socket === active && active.readyState === WebSocket.OPEN) active.send('ping'); }, 15000);
+}
 function stopConnection() {
   resetPrintControls(false);
-  clearTimeout(reconnectTimer); clearInterval(heartbeatTimer); heartbeatTimer = undefined;
+  clearTimeout(reconnectTimer); clearTimeout(discoveryTimer); clearInterval(heartbeatTimer); heartbeatTimer = undefined;
   connectionVersion++;
   if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); socket = undefined; }
 }
 function connect() {
-  clearTimeout(reconnectTimer); if (!saved.printerIp || !saved.serialNumber || (saved.printerModel === 'cc2' && !saved.accessCode)) return openSettings();
+  clearTimeout(reconnectTimer);
+  const cc2 = saved.printerModel === 'cc2';
+  // CC2 needs its serial number up front because it forms part of the MQTT topic it
+  // publishes to. CC1 can start with none and ask the printer for it.
+  const discovering = !cc2 && !saved.serialNumber;
+  if (!saved.printerIp || (cc2 && (!saved.serialNumber || !saved.accessCode))) return openSettings();
   const version = ++connectionVersion;
   clearInterval(heartbeatTimer); heartbeatTimer = undefined;
   if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); }
   let active;
-  const cc2 = saved.printerModel === 'cc2';
   let connectionError = '';
   $('camera').removeAttribute('src'); $('camera').hidden = true; $('cameraEmpty').hidden = false;
   updateStatus({ Status: { CurrentStatus: 0 } });
@@ -119,12 +137,29 @@ function connect() {
   setConnection('Connecting to printer…');
   active.onopen = () => {
     if (version !== connectionVersion) return;
-    retryDelay = 1500; setConnection('Receiving live printer status.', true);
-    send(0, {}, active); send(1, {}, active); send(386, { Enable: 1 }, active);
-    startCamera(saved.cameraUrl || `${saved.printerIp}:${cc2 ? '8080/?action=stream' : '3031/video'}`);
-    heartbeatTimer = setInterval(() => { if (socket === active && active.readyState === WebSocket.OPEN) active.send('ping'); }, 15000);
+    retryDelay = 1500;
+    if (discovering) {
+      setConnection('Waiting for the printer to identify itself…');
+      discoveryTimer = setTimeout(() => {
+        if (version !== connectionVersion) return;
+        stopConnection();
+        openSettings('No printer ID arrived. The printer only announces itself while it is idle or printing — check that it is powered on, or enter the Serial Number from its interface.');
+      }, SERIAL_DISCOVERY_TIMEOUT);
+      return;
+    }
+    startSession(active, cc2);
   };
-  active.onmessage = e => { if (version !== connectionVersion || e.data === 'pong') return; try { const data = JSON.parse(e.data); handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data); } catch { } };
+  active.onmessage = e => {
+    if (version !== connectionVersion || e.data === 'pong') return;
+    try {
+      const data = JSON.parse(e.data);
+      if (discovering && !saved.serialNumber) {
+        const serialNumber = mainboardIdFrom(data);
+        if (serialNumber) { clearTimeout(discoveryTimer); saved.serialNumber = serialNumber; localStorage.setItem('dashboard', JSON.stringify(saved)); startSession(active, cc2); }
+      }
+      handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data);
+    } catch { }
+  };
   active.onerror = event => { if (version === connectionVersion) { connectionError = cc2 ? event.message || 'CC2 connection failed.' : ''; setConnection(connectionError || 'Connection issue detected; attempting to recover…'); } };
   active.onclose = () => {
     if (version !== connectionVersion) return;
@@ -162,16 +197,19 @@ function updateModelSettings() {
   $('accessCode').required = cc2;
   $('accessCode').disabled = !cc2;
   $('serialLabel').textContent = cc2 ? 'Printer serial number (SN)' : 'Serial Number';
+  $('serialNumber').required = cc2;
+  $('serialHint').hidden = cc2;
   $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
 }
-function openSettings() {
+function openSettings(notice = '') {
   for (const key of ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode']) $(key).value = saved[key] || '';
   $('printerModel').value = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
   updateModelSettings();
+  $('settingsNotice').hidden = !notice; $('settingsNotice').textContent = notice;
   $('settingsDialog').showModal();
 }
 $('printerModel').onchange = updateModelSettings;
-$('settingsButton').onclick = openSettings;
+$('settingsButton').onclick = () => openSettings();
 $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightState(next); send(403, { LightStatus: { SecondLight: next ? 1 : 0 } }); };
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
 $('resumePrint').onclick = () => controlPrint(131, 'resumePrint', 'Resume');

@@ -652,6 +652,10 @@ dialog p {
     line-height: 1.45;
 }
 
+dialog .settings-notice {
+    color: var(--danger);
+}
+
 label {
     display: block;
     margin: 14px 0 5px;

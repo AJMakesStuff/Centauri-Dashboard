@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const { EventEmitter } = require('node:events');
 
 function setup(settings = {}, secureContext = true) {
-  const elements = new Map(), clients = [], sockets = [], timers = new Map();
+  const elements = new Map(), clients = [], sockets = [], timers = new Map(), stored = new Map();
   let timerId = 0, time = 100000;
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
@@ -27,7 +27,7 @@ function setup(settings = {}, secureContext = true) {
     Date: class extends Date { static now() { return time; } },
     setTimeout(fn, ms) { timers.set(++timerId, { fn, ms }); return timerId; },
     clearTimeout(id) { timers.delete(id); }, setInterval() { return ++timerId; }, clearInterval() { },
-    localStorage: { getItem: () => JSON.stringify(settings), setItem() { } },
+    localStorage: { getItem: key => key === 'dashboard' && !stored.has(key) ? JSON.stringify(settings) : stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) },
     document: { getElementById: element, querySelector: element, addEventListener() { } }, addEventListener() { },
     mqtt: {
       connect(url, options) {
@@ -50,7 +50,7 @@ function setup(settings = {}, secureContext = true) {
     const client = clients.at(-1); client.emit('connect');
     receive({ error: 'ok' }, client.topics[0]);
   };
-  return { element, clients, sockets, run, tick, receive, register, timers };
+  return { element, clients, sockets, run, tick, receive, register, timers, stored: () => JSON.parse(stored.get('dashboard') || '{}') };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
 test('CC1 over LAN HTTP starts camera and sends requests without randomUUID', () => {
@@ -152,4 +152,50 @@ test('missing CC2 credentials open populated settings without connecting; camera
   const video = u.clients[0].sent.find(item => item.data.method === 1042);
   u.receive({ id: video.data.id, result: { error_code: 0, url: 'http://printer/video' } });
   assert.equal(u.element('camera').src, 'http://camera.local/custom');
+});
+
+test('CC1 with no Serial Number adopts the MainboardID from the printer push, then starts its session', () => {
+  const t = setup({ printerIp: '192.168.1.2' }), socket = t.sockets[0];
+  assert.equal(t.sockets.length, 1);
+  assert.match(socket.url, /:3030\/websocket$/);
+  socket.readyState = 1; socket.onopen();
+  assert.equal(socket.sent.length, 0);
+  assert.match(t.element('connection').innerHTML, /identify itself/);
+  socket.onmessage({ data: JSON.stringify({ Data: { MainboardID: '000000000001d354' }, Topic: 'sdcp/attributes/000000000001d354' }) });
+  assert.deepEqual(socket.sent.map(value => JSON.parse(value).Data.Cmd), [0, 1, 386]);
+  assert.equal(JSON.parse(socket.sent[0]).Topic, 'sdcp/request/000000000001d354');
+  assert.equal(JSON.parse(socket.sent[0]).Data.serialNumber, '000000000001d354');
+  assert.equal(t.stored().serialNumber, '000000000001d354');
+  assert.equal(t.element('camera').src, 'http://192.168.1.2:3031/video');
+  assert.match(t.element('connection').innerHTML, /Receiving live printer status/);
+});
+
+test('CC1 discovery reads the ID from the frame topic and still renders that frame', () => {
+  const t = setup({ printerIp: '192.168.1.2' }), socket = t.sockets[0];
+  socket.readyState = 1; socket.onopen();
+  socket.onmessage({ data: JSON.stringify({ Status: { CurrentStatus: [1], PrintInfo: { Status: 1, Filename: 'part.gcode', CurrentTicks: 5, TotalTicks: 10 } }, Topic: 'sdcp/status/000000000001d354' }) });
+  assert.equal(JSON.parse(socket.sent[0]).Data.serialNumber, '000000000001d354');
+  assert.equal(t.element('filename').textContent, 'part.gcode');
+  assert.equal(t.element('machineStatus').textContent, 'Printing');
+});
+
+test('CC1 discovery gives up into settings with a notice when the printer stays silent', () => {
+  const t = setup({ printerIp: '192.168.1.9' }), socket = t.sockets[0];
+  socket.readyState = 1; socket.onopen();
+  assert.equal(socket.sent.length, 0);
+  const discovery = [...t.timers.values()].find(timer => timer.ms === 8000);
+  assert.ok(discovery, 'a discovery timeout is scheduled');
+  discovery.fn();
+  assert.equal(t.element('settingsDialog').open, true);
+  assert.match(t.element('settingsNotice').textContent, /No printer ID arrived/);
+  assert.equal(t.element('serialNumber').required, false);
+  assert.equal(t.element('serialHint').hidden, false);
+});
+
+test('CC2 still requires its serial number, and never tries CC1 discovery', () => {
+  const t = setup({ printerModel: 'cc2', printerIp: '192.168.1.50', accessCode: 'test-code' });
+  assert.equal(t.clients.length, 0); assert.equal(t.sockets.length, 0);
+  assert.equal(t.element('settingsDialog').open, true);
+  assert.equal(t.element('serialNumber').required, true);
+  assert.equal(t.element('serialHint').hidden, true);
 });
