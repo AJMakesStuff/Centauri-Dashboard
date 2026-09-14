@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.2 (Current)
+## 0.1.3 (Current)
+
+### Fixed
+
+- localhost camera not showing when connecting via Xampp
+
+## 0.1.2
 
 ### Added
 

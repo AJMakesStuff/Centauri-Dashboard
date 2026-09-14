@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const { EventEmitter } = require('node:events');
 
-function setup(settings = {}) {
+function setup(settings = {}, secureContext = true) {
   const elements = new Map(), clients = [], sockets = [], timers = new Map();
   let timerId = 0, time = 100000;
   const element = id => {
@@ -21,7 +21,9 @@ function setup(settings = {}) {
     close() { this.readyState = 3; }
   }
   const context = vm.createContext({
-    console, crypto: require('node:crypto').webcrypto, WebSocket: Socket,
+    console, crypto: secureContext ? require('node:crypto').webcrypto : {
+      getRandomValues: array => require('node:crypto').webcrypto.getRandomValues(array)
+    }, WebSocket: Socket,
     Date: class extends Date { static now() { return time; } },
     setTimeout(fn, ms) { timers.set(++timerId, { fn, ms }); return timerId; },
     clearTimeout(id) { timers.delete(id); }, setInterval() { return ++timerId; }, clearInterval() { },
@@ -51,6 +53,21 @@ function setup(settings = {}) {
   return { element, clients, sockets, run, tick, receive, register, timers };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
+test('CC1 over LAN HTTP starts camera and sends requests without randomUUID', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' }, false);
+  const socket = t.sockets[0];
+  socket.readyState = 1;
+  socket.onopen();
+  const requests = socket.sent.map(value => JSON.parse(value));
+  assert.deepEqual(requests.map(request => request.Data.Cmd), [0, 1, 386]);
+  for (const request of requests) {
+    assert.match(request.Id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    assert.equal(request.Id, request.Data.RequestID);
+  }
+  assert.equal(new Set(requests.map(request => request.Id)).size, 3);
+  assert.equal(t.element('camera').src, 'http://192.168.1.2:3031/video');
+  assert.equal(t.element('camera').hidden, false);
+});
 const status = {
   machine_status: { status: 2, sub_status: 2075, progress: 42 },
   print_status: { filename: 'cube.gcode', current_layer: 20, total_layer: 80, print_duration: 50, total_duration: 100, remaining_time_sec: 120 },

@@ -62,7 +62,16 @@ const finishTime = secondsLeft => {
 };
 function setConnection(message, connected = false) { resetPrintControls(connected); $('connection').innerHTML = `<b>${connected ? 'Connected.' : 'Offline.'}</b> ${message}`; $('liveBadge').classList.toggle('online', connected); $('overlay').classList.toggle('connected', connected); $('lightToggle').disabled = !connected; $('liveText').textContent = connected ? 'LIVE' : 'OFFLINE'; }
 function updateLightState(on) { currentLightOn = Boolean(on); $('lightToggle').setAttribute('aria-pressed', String(currentLightOn)); }
-function message(cmd, data = {}) { const id = crypto.randomUUID(); return { Id: id, Data: { Cmd: cmd, Data: data, RequestID: id, serialNumber: saved.serialNumber, TimeStamp: Math.floor(Date.now() / 1000), From: 0 }, Topic: `sdcp/request/${saved.serialNumber}` }; }
+function requestId() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  // LAN HTTP pages lack randomUUID; getRandomValues also works outside secure contexts.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+function message(cmd, data = {}) { const id = requestId(); return { Id: id, Data: { Cmd: cmd, Data: data, RequestID: id, serialNumber: saved.serialNumber, TimeStamp: Math.floor(Date.now() / 1000), From: 0 }, Topic: `sdcp/request/${saved.serialNumber}` }; }
 function send(cmd, data, target = socket) { if (target?.readyState === WebSocket.OPEN) target.send(JSON.stringify(message(cmd, data))); }
 function normalizeUrl(url) { return /^https?:\/\//.test(url) ? url : `http://${url}`; }
 function startCamera(url) { if (!url) return; const img = $('camera'); img.src = normalizeUrl(url); img.hidden = false; $('cameraEmpty').hidden = true; }
