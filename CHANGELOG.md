@@ -2,7 +2,14 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.8 (Current)
+## 0.1.9 (Current)
+
+## Added
+
+- Added split view for monitoring CC1 and CC2 simultaneously
+- Added Serial Number auto-discovery error message when running without docker
+
+## 0.1.8
 
 ## Fixes
 

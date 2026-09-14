@@ -4,12 +4,14 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const { EventEmitter } = require('node:events');
 
-function setup(settings = {}, secureContext = true, fetch) {
-  const elements = new Map(), clients = [], sockets = [], timers = new Map(), stored = new Map();
+function setup(settings = {}, secureContext = true, fetch, search = '', sharedStore) {
+  const elements = new Map(), clients = [], sockets = [], timers = new Map(), stored = sharedStore || new Map();
   let timerId = 0, time = 100000;
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
-      value: '', style: {}, classList: { toggle() { } },
+      value: '', style: {}, children: [], classList: { toggle() { }, add() { }, remove() { } },
+      append(child) { this.children.push(child); child.remove = () => this.children.splice(this.children.indexOf(child), 1); },
+      querySelectorAll() { return [...this.children]; },
       setAttribute() { }, removeAttribute() { }, after() { }, showModal() { this.open = true; }, close() { this.open = false; },
       addEventListener(type, fn) { (this.events ||= {})[type] = fn; }
     });
@@ -22,14 +24,14 @@ function setup(settings = {}, secureContext = true, fetch) {
     close() { this.readyState = 3; }
   }
   const context = vm.createContext({
-    console, fetch, crypto: secureContext ? require('node:crypto').webcrypto : {
+    console, fetch, location: { search }, URLSearchParams, crypto: secureContext ? require('node:crypto').webcrypto : {
       getRandomValues: array => require('node:crypto').webcrypto.getRandomValues(array)
     }, WebSocket: Socket,
     Date: class extends Date { static now() { return time; } },
     setTimeout(fn, ms) { timers.set(++timerId, { fn, ms }); return timerId; },
     clearTimeout(id) { timers.delete(id); }, setInterval() { return ++timerId; }, clearInterval() { },
     localStorage: { getItem: key => key === 'dashboard' && !stored.has(key) ? JSON.stringify(settings) : stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) },
-    document: { getElementById: element, querySelector: element, addEventListener() { } }, addEventListener() { },
+    document: { body: element('body'), createElement: () => ({}), getElementById: element, querySelector: element, addEventListener() { } }, addEventListener() { },
     mqtt: {
       connect(url, options) {
         const client = new EventEmitter();
@@ -332,7 +334,7 @@ test('a blocked settings save explains itself instead of silently doing nothing'
 test('an empty Serial Number keeps the dialog open with a spinner until the printer identifies itself', () => {
   const t = setup({});
   assert.equal(t.element('settingsDialog').open, true);
-  assert.equal(Boolean(t.element('serialSpinner').hidden), false);
+  assert.equal(Boolean(t.element('serialSpinner').hidden), true);
   t.element('printerIp').value = '192.168.20.129';
   t.element('settingsForm').onsubmit({ preventDefault() { } });
   assert.equal(t.element('settingsDialog').open, true);
@@ -417,4 +419,101 @@ test('missing Docker endpoint leaves WebSocket discovery available', async () =>
   assert.equal(socket.sent.length, 0);
   socket.onmessage({ data: JSON.stringify({ MainboardID: '000000000001d354' }) });
   assert.equal(t.stored().serialNumber, '000000000001d354');
+});
+
+
+test('Both view stops the single session and returning to a printer closes both panels', () => {
+  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.2', serialNumber: 'board' } } });
+  t.element('switchBoth').onclick();
+  assert.equal(t.clients[0].connected, false);
+  const frames = t.element('bothPrinters').children;
+  assert.deepEqual(frames.map(frame => frame.src), ['dashboard.html?printer=cc1', 'dashboard.html?printer=cc2']);
+  assert.equal(t.stored().viewMode, 'both');
+  t.element('switchBoth').onclick();
+  assert.equal(frames.length, 2);
+  let closed = 0;
+  for (const frame of frames) frame.contentWindow = { stopConnection() { closed++; } };
+  t.element('switchCC2').onclick();
+  assert.equal(closed, 2);
+  assert.equal(frames.length, 0);
+  assert.equal(t.clients.length, 2);
+  assert.equal(t.stored().viewMode, 'single');
+});
+
+test('Both view restores without opening an extra parent connection', () => {
+  const t = setup({ ...cc2, viewMode: 'both', profiles: { cc1: { printerIp: '192.168.1.2', serialNumber: 'board' } } });
+  assert.equal(t.clients.length, 0);
+  assert.equal(t.sockets.length, 0);
+  assert.equal(t.element('bothPrinters').children.length, 2);
+});
+
+test('embedded printers use independent profiles and merge settings without losing other edits', () => {
+  const store = new Map([['dashboard', JSON.stringify({ ...cc2, viewMode: 'both', profiles: {
+    cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }, cc2
+  } })]]);
+  const first = setup({}, true, undefined, '?printer=cc1', store);
+  const second = setup({}, true, undefined, '?printer=cc2', store);
+  assert.equal(first.sockets[0].url, 'ws://192.168.1.2:3030/websocket');
+  assert.equal(second.clients.length, 1);
+  assert.equal(first.element('printerSwitch').hidden, true);
+  const socket = first.sockets[0]; socket.readyState = 1; socket.onopen();
+  second.register();
+  socket.onmessage({ data: JSON.stringify({ Status: { CurrentStatus: 1, PrintInfo: { Filename: 'first.gcode', Status: 1 } } }) });
+  const secondRequests = second.clients[0].sent.length;
+  first.element('pausePrint').onclick();
+  const command = JSON.parse(socket.sent.at(-1));
+  assert.equal(command.Data.Cmd, 129);
+  assert.equal(command.Data.serialNumber, 'board');
+  assert.equal(second.clients[0].sent.length, secondRequests);
+
+  first.run("saved.cameraUrl = 'http://first/camera'; saveActiveProfile()");
+  second.run("saved.cameraUrl = 'http://second/camera'; saveActiveProfile()");
+  assert.equal(first.stored().profiles.cc1.cameraUrl, 'http://first/camera');
+  assert.equal(first.stored().profiles.cc2.cameraUrl, 'http://second/camera');
+  assert.equal(first.stored().cameraUrl, 'http://second/camera');
+  assert.equal(first.stored().printerModel, 'cc2');
+  assert.equal(first.stored().viewMode, 'both');
+  first.element('showTemperatures').checked = false;
+  first.element('showTemperatures').onchange();
+  assert.equal(first.stored().showTemperatures, false);
+});
+
+
+test('discovery accepts a valid topic or nested ID when another ID field is empty', () => {
+  const t = setup({ printerIp: '192.168.1.2' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  socket.onmessage({ data: JSON.stringify({ Data: { MainboardID: '' }, Topic: 'sdcp/status/000000000001d354' }) });
+  assert.equal(t.stored().serialNumber, '000000000001d354');
+  assert.equal(t.run("mainboardIdFrom({Data: {Data: {MainboardID: '000000000001d354'}}})"), '000000000001d354');
+});
+
+test('opening settings starts discovery and an active known CC1 ID is reused', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: '000000000001d354' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  t.element('settingsButton').onclick();
+  t.element('serialNumber').value = '';
+  t.run("probeSerial('192.168.1.2')");
+  assert.equal(t.element('serialNumber').value, '000000000001d354');
+  assert.equal(t.sockets.length, 1);
+  const u = setup({ printerIp: '192.168.1.3' });
+  u.element('settingsButton').onclick();
+  assert.ok([...u.timers.values()].some(timer => timer.ms === 700));
+});
+
+test('file discovery skips the server and explains a silent WebSocket probe', () => {
+  let requests = 0;
+  const t = setup({}, true, () => { requests++; });
+  t.run("location.protocol = 'file:'; probeSerial('192.168.1.2')");
+  assert.equal(requests, 0);
+  [...t.timers.values()].find(timer => timer.ms === 8000).fn();
+  assert.equal(t.element('serialSpinner').hidden, true);
+  assert.match(t.element('settingsNotice').textContent, /WebSocket announcements only/);
+  assert.match(t.element('settingsNotice').textContent, /Docker/);
+});
+
+test('combined fullscreen keeps parent panel toggles hidden', () => {
+  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.2', serialNumber: 'board' } } });
+  t.run("showBothPrinters(); document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
+  assert.equal(t.element('statsPanelToggle').hidden, true);
+  assert.equal(t.element('controlsPanelToggle').hidden, true);
 });

@@ -902,3 +902,26 @@ select {
     }
     .shell:fullscreen .live { transition: none; }
 }
+
+
+/* Each panel runs an independent connection and scopes controls to its printer. */
+.shell.both-view { max-width: 1920px; }
+.both-view > .camera, .both-view > .overlay, .both-view > .status,
+.both-view > footer, .both-view #settingsButton { display: none; }
+.both-printers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.both-printers[hidden] { display: none; }
+.both-printers iframe { width: 100%; height: 900px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); }
+.embedded-dashboard { background: var(--bg); }
+.embedded-dashboard .shell { min-height: 0; padding: 16px; }
+.embedded-dashboard footer { display: none; }
+.embedded-dashboard #fullscreenButton { display: none; }
+.shell.both-view:fullscreen { padding: 20px; overflow: auto; }
+.shell.both-view:fullscreen > header { position: static; }
+.shell.both-view:fullscreen #printerSwitch { display: none; }
+@media (max-width: 1100px) {
+    .both-printers { grid-template-columns: 1fr; }
+}
+
+/* The combined fullscreen view must never reveal the parent printer's UI. */
+.shell.both-view > .camera, .shell.both-view > .overlay,
+.shell.both-view > .status, .shell.both-view #lightToggle { display: none; }

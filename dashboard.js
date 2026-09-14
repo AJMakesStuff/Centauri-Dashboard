@@ -6,23 +6,76 @@ saved.profiles ||= {};
 // Recent versions saved edits only at the top level; preserve those edits on migration.
 saved.profiles[saved.printerModel] = Object.fromEntries(connectionFields.map(key =>
   [key, saved[key] ?? saved.profiles[saved.printerModel]?.[key] ?? '']));
-Object.assign(saved, saved.profiles[saved.printerModel]);
+const embeddedModel = typeof location !== 'undefined'
+  ? new URLSearchParams(location.search).get('printer') : null;
+const embedded = ['cc1', 'cc2'].includes(embeddedModel);
+if (embedded) saved.printerModel = embeddedModel;
+Object.assign(saved, Object.fromEntries(connectionFields.map(key =>
+  [key, saved.profiles[saved.printerModel]?.[key] || ''])));
+let bothView = false;
+function persistSettings(setting) {
+  // Each view owns one profile. Merge writes so another live view's edits survive.
+  const latest = JSON.parse(localStorage.getItem('dashboard') || '{}');
+  saved.profiles = { ...saved.profiles, ...latest.profiles,
+    [saved.printerModel]: saved.profiles[saved.printerModel] };
+  const next = embedded ? { ...latest, profiles: saved.profiles } : saved;
+  if (embedded && latest.printerModel === saved.printerModel) {
+    for (const key of connectionFields) next[key] = saved[key];
+  }
+  if (setting) next[setting] = saved[setting];
+  localStorage.setItem('dashboard', JSON.stringify(next));
+}
+function closeBothView() {
+  if (!bothView) return;
+  for (const frame of $('bothPrinters').querySelectorAll('iframe')) {
+    try { frame.contentWindow?.stopConnection(); } catch { /* File origins may be isolated. */ }
+    frame.remove();
+  }
+  Object.assign(saved, JSON.parse(localStorage.getItem('dashboard') || '{}'));
+  bothView = false;
+  $('bothPrinters').hidden = true;
+  document.querySelector('.shell').classList.remove('both-view');
+  saved.viewMode = 'single';
+}
+function showBothPrinters() {
+  if (embedded || bothView || !profileReady('cc1') || !profileReady('cc2')) return;
+  stopConnection();
+  $('camera').removeAttribute('src');
+  bothView = true;
+  saved.viewMode = 'both';
+  persistSettings();
+  document.querySelector('.shell').classList.add('both-view');
+  $('bothPrinters').hidden = false;
+  for (const model of ['cc1', 'cc2']) {
+    const frame = document.createElement('iframe');
+    frame.title = `${model.toUpperCase()} live printer dashboard`;
+    frame.allow = 'fullscreen';
+    frame.src = `dashboard.html?printer=${model}`;
+    $('bothPrinters').append(frame);
+  }
+  updatePrinterSwitch();
+}
 let settingsDrafts, editingModel;
 function saveActiveProfile() {
   saved.profiles[saved.printerModel] = Object.fromEntries(connectionFields.map(key => [key, saved[key] || '']));
-  localStorage.setItem('dashboard', JSON.stringify(saved));
+  persistSettings();
 }
 function profileReady(model) {
   const profile = saved.profiles[model];
   return Boolean(profile?.printerIp && (model !== 'cc2' || (profile.serialNumber && profile.accessCode)));
 }
 function updatePrinterSwitch() {
-  $('printerSwitch').hidden = !(profileReady('cc1') && profileReady('cc2'));
-  $('switchCC1').setAttribute('aria-pressed', String(saved.printerModel === 'cc1'));
-  $('switchCC2').setAttribute('aria-pressed', String(saved.printerModel === 'cc2'));
+  $('printerSwitch').hidden = embedded || (!bothView && !(profileReady('cc1') && profileReady('cc2')));
+  $('switchCC1').disabled = !profileReady('cc1');
+  $('switchCC2').disabled = !profileReady('cc2');
+  $('switchBoth').disabled = !profileReady('cc1') || !profileReady('cc2');
+  $('switchCC1').setAttribute('aria-pressed', String(!bothView && saved.printerModel === 'cc1'));
+  $('switchBoth').setAttribute('aria-pressed', String(bothView));
+  $('switchCC2').setAttribute('aria-pressed', String(!bothView && saved.printerModel === 'cc2'));
 }
 function selectPrinter(model) {
-  if (saved.printerModel === model || !profileReady(model)) return;
+  if (embedded || !profileReady(model) || (!bothView && saved.printerModel === model)) return;
+  closeBothView();
   cancelSerialProbe(true);
   stopConnection();
   settingsPendingClose = false;
@@ -138,17 +191,22 @@ function updateStatus(raw) {
 const SERIAL_DISCOVERY_TIMEOUT = 8000;
 function mainboardIdFrom(raw) {
   const topic = typeof raw?.Topic === 'string' ? raw.Topic.replace(/^sdcp\/[a-z]+\//i, '') : '';
-  const candidate = raw?.Data?.MainboardID ?? raw?.MainboardID ?? topic;
-  return typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate) ? candidate : undefined;
+  return [raw?.Data?.MainboardID, raw?.Data?.Data?.MainboardID, raw?.MainboardID, topic]
+    .find(candidate => typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate));
 }
 function discoverViaServer(ip, receive) {
-  if (typeof fetch !== 'function') return;
+  if (typeof fetch !== 'function' || location.protocol === 'file:') return;
   fetch(`/api/discover?ip=${encodeURIComponent(ip)}`, { cache: 'no-store' })
     .then(response => response.ok ? response.json() : null)
     .then(data => {
       const serial = mainboardIdFrom({ MainboardID: data?.serialNumber });
       if (serial) receive(serial);
     }).catch(() => { });
+}
+function discoveryNotice() {
+  return 'No printer ID arrived. ' + (location.protocol === 'file:'
+    ? 'Opening dashboard.html directly supports WebSocket announcements only. Run the dashboard with Docker for UDP discovery, or enter the Serial Number manually.'
+    : 'Check that the printer is reachable. Without the Docker discovery service, detection depends on WebSocket announcements. You can also enter the Serial Number manually.');
 }
 let serialProbe, serialProbeDebounce, serialProbeTimeout;
 function cancelSerialProbe(pending = false) {
@@ -162,13 +220,22 @@ function probeSerial(ip) {
   cancelSerialProbe();
   if ($('printerModel').value === 'cc2' || !looksLikeAddress(ip)) return setDiscoveryPending(false);
   // Don't compete for the printer's connection slots with a session that is already live.
-  if (socket?.readyState === WebSocket.OPEN && saved.printerIp === ip) return setDiscoveryPending(false);
+  if (saved.printerModel === 'cc1' && socket?.readyState === WebSocket.OPEN && saved.printerIp === ip && saved.serialNumber) {
+    if (!$('serialNumber').value.trim()) $('serialNumber').value = saved.serialNumber;
+    return setDiscoveryPending(false);
+  }
   setDiscoveryPending(true);
   let probe;
   try { probe = new WebSocket(`ws://${ip}:3030/websocket`); } catch { return setDiscoveryPending(false); }
   serialProbe = probe;
   const finish = () => { if (serialProbe === probe) cancelSerialProbe(true); };
-  serialProbeTimeout = setTimeout(finish, SERIAL_DISCOVERY_TIMEOUT);
+  const failed = () => {
+    if (serialProbe !== probe) return;
+    finish();
+    $('settingsNotice').hidden = false;
+    $('settingsNotice').textContent = discoveryNotice();
+  };
+  serialProbeTimeout = setTimeout(failed, SERIAL_DISCOVERY_TIMEOUT);
   const receive = serialNumber => {
     if (serialProbe !== probe) return;
     $('serialNumber').value = serialNumber; $('settingsNotice').hidden = true;
@@ -182,7 +249,7 @@ function probeSerial(ip) {
     if (!serialNumber) return;
     receive(serialNumber);
   };
-  probe.onerror = finish; probe.onclose = finish;
+  probe.onerror = failed; probe.onclose = failed;
 }
 function scheduleSerialProbe() {
   clearTimeout(serialProbeDebounce); serialProbeDebounce = undefined;
@@ -239,7 +306,7 @@ function connect() {
         if (version !== connectionVersion) return;
         setDiscoveryPending(false); settingsPendingClose = false;
         stopConnection();
-        openSettings('No printer ID arrived. The printer only announces itself while it is idle or printing — check that it is powered on, or enter the Serial Number from its interface.');
+        openSettings(discoveryNotice());
       }, SERIAL_DISCOVERY_TIMEOUT);
       discoverViaServer(saved.printerIp, serialNumber => {
         if (version === connectionVersion && active.readyState === WebSocket.OPEN) {
@@ -273,6 +340,7 @@ function connect() {
   active.onerror = event => { if (version === connectionVersion) { connectionError = cc2 ? event.message || 'CC2 connection failed.' : ''; setConnection(connectionError || 'Connection issue detected; attempting to recover…'); } };
   active.onclose = () => {
     if (version !== connectionVersion) return;
+    clearTimeout(discoveryTimer);
     clearInterval(heartbeatTimer); heartbeatTimer = undefined; socket = undefined;
     const wait = retryDelay; retryDelay = Math.min(retryDelay * 2, 30000);
     setConnection(`${connectionError || 'Connection lost.'} Retrying in ${Math.ceil(wait / 1000)} seconds…`);
@@ -283,7 +351,7 @@ function connect() {
 const collapsedPanels = { stats: false, controls: false };
 function updateFullscreenPanels() {
   const shell = document.querySelector('.shell');
-  const fullscreen = document.fullscreenElement === shell;
+  const fullscreen = !bothView && document.fullscreenElement === shell;
   shell.classList.toggle('fullscreen-controls-collapsed', fullscreen && collapsedPanels.controls);
   for (const [name, panelId, setting] of [
     ['stats', 'overlay', 'showStatsPanel'],
@@ -325,7 +393,7 @@ function applyControlVisibility() {
 for (const setting of ['showPrintControls', 'showTemperatures', 'showStatsPanel', 'showLightToggle']) {
   $(setting).onchange = () => {
     saved[setting] = $(setting).checked;
-    localStorage.setItem('dashboard', JSON.stringify(saved));
+    persistSettings(setting);
     applyControlVisibility();
   };
 }
@@ -340,7 +408,7 @@ function updateModelSettings() {
   $('serialHint').hidden = cc2;
   $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
   if (cc2) cancelSerialProbe(true);
-  else if ($('settingsDialog').open) scheduleSerialProbe();
+  else if ($('settingsDialog').open && !$('serialNumber').value.trim()) scheduleSerialProbe();
 }
 function openSettings(notice = '') {
   settingsDrafts = JSON.parse(JSON.stringify(saved.profiles));
@@ -350,6 +418,7 @@ function openSettings(notice = '') {
   updateModelSettings();
   $('settingsNotice').hidden = !notice; $('settingsNotice').textContent = notice;
   $('settingsDialog').showModal();
+  if (!notice && editingModel === 'cc1' && !$('serialNumber').value.trim()) scheduleSerialProbe();
 }
 $('printerModel').onchange = () => {
   cancelSerialProbe(true);
@@ -359,6 +428,7 @@ $('printerModel').onchange = () => {
   $('settingsNotice').hidden = true;
   updateModelSettings();
 };
+$('switchBoth').onclick = showBothPrinters;
 $('switchCC1').onclick = () => selectPrinter('cc1');
 $('switchCC2').onclick = () => selectPrinter('cc2');
 updatePrinterSwitch();
@@ -376,10 +446,12 @@ $('fullscreenButton').onclick = async () => {
 document.addEventListener('fullscreenchange', () => {
   const fullscreen = document.fullscreenElement === document.querySelector('.shell');
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
-  if (fullscreen) $('fullscreenButton').after($('lightToggle'));
+  if (fullscreen && !bothView) $('fullscreenButton').after($('lightToggle'));
   else $('camera').after($('lightToggle'));
   updateFullscreenPanels();
 });
+$('settingsDialog').addEventListener('close', () => cancelSerialProbe(true));
+$('serialNumber').addEventListener('input', () => cancelSerialProbe(true));
 $('closeButton').onclick = () => $('settingsDialog').close();
 // Chrome's own validation bubble is easy to miss inside a modal dialog, and a blocked
 // submit otherwise looks like the Save button doing nothing.
@@ -394,7 +466,7 @@ $('settingsForm').addEventListener('invalid', event => {
 }, true);
 $('settingsForm').onsubmit = e => {
   e.preventDefault();
-  saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim();
+  saved.printerModel = embedded ? embeddedModel : $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim();
   saveActiveProfile();
   updatePrinterSwitch();
   $('settingsNotice').hidden = true;
@@ -405,5 +477,17 @@ $('settingsForm').onsubmit = e => {
   stopConnection(); connect();
 };
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
-addEventListener('pagehide', stopConnection);
-connect();
+addEventListener('pagehide', () => { stopConnection(); closeBothView(); });
+if (embedded) {
+  document.body.classList.add('embedded-dashboard');
+  document.querySelector('h1').textContent = embeddedModel === 'cc1' ? 'Centauri Carbon · CC1' : 'Centauri Carbon 2 · CC2';
+  $('printerModel').disabled = true;
+  // Match each panel to its contents, including wrapped status messages.
+  if (typeof ResizeObserver !== 'undefined' && window.frameElement) {
+    new ResizeObserver(() => {
+      window.frameElement.style.height = `${document.querySelector('.shell').scrollHeight}px`;
+    }).observe(document.querySelector('.shell'));
+  }
+}
+if (!embedded && saved.viewMode === 'both' && profileReady('cc1') && profileReady('cc2')) showBothPrinters();
+else connect();

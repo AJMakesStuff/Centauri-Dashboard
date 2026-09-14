@@ -19,10 +19,12 @@
         <div id="printerSwitch" class="printer-switch" role="group" aria-label="Active printer" hidden>
           <button id="switchCC1" type="button" aria-pressed="false">CC1</button>
           <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
+          <button id="switchBoth" type="button" aria-pressed="false">Both</button>
         </div>
         <button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button>
       </div>
     </header>
+    <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
     <section class="camera" aria-label="Printer camera">
       <div class="empty" id="cameraEmpty">Connect your printer to start the live camera feed.</div>
       <img id="camera" alt="Live view from the printer camera" hidden />

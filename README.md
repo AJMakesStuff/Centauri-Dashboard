@@ -73,7 +73,7 @@ Notes:
 - Select **Fullscreen** for a larger camera view. Select **Exit fullscreen** or press `Esc` to leave it.
 - Select the refresh arrow beside the connection indicator to reconnect manually.
 - Select the circular bulb button in the camera's top-right corner to toggle the chamber light. Use **Show chamber light button** in Settings to hide or show it independently of the stats panel.
-- Open **Settings** to configure each printer and select **Save** for each model. CC1 and CC2 retain separate addresses, IDs, access codes, and camera URLs. Once both are configured, use the **CC1 / CC2** buttons in the dashboard header (also available in fullscreen) to switch the camera, status, and controls. The selected printer is remembered on reload; only the selected printer is connected at a time. The LAN access code is visible as you type.
+- Open **Settings** to configure each printer and select **Save** for each model. CC1 and CC2 retain separate addresses, IDs, access codes, and camera URLs. Once both are configured, use the **CC1 / CC2** buttons in the dashboard header (also available in fullscreen) to switch the camera, status, and controls. The selected printer is remembered on reload; in single view, only the selected printer is connected. Select **Both** to connect to CC1 and CC2 simultaneously, with separate cameras, status, temperatures, light and print controls. Panels appear side by side on wide screens and stack on smaller screens. Each panel has its own Settings, refresh and fullscreen buttons; the header fullscreen button expands the combined view. Selecting **CC1** or **CC2** returns to a single connection. The Both view is remembered on reload. The LAN access code is visible as you type.
 - When there is no active print, the job panel shows a waiting message while temperature readings can still update.
 
 ## Connection details and storage
@@ -96,6 +96,7 @@ Settings are stored in browser local storage under `dashboard`, including the CC
 
 ## Troubleshooting
 
+- Opening `dashboard.html` directly does not run the UDP discovery service. CC1 detection can still work from WebSocket announcements, but if none arrive, use Docker or enter the Serial Number manually. A plain static web server alone does not add UDP discovery.
 - Settings opens by itself saying no printer ID arrived: for CC1 the Serial Number is filled in automatically, but the printer only announces it while it is idle or printing. Wake the printer and reconnect, or paste the Serial Number from its interface.
 - CC2 cannot connect: Enable LAN Only mode, verify the printer SN and access code, and check access to port 9001. Authentication and registration failures appear in the connection status. If firmware does not expose MQTT over WebSocket, this browser-only dashboard cannot connect through port 1883 instead.
 - Browser blocks local connections: Open the local HTML file or serve it over local HTTP, and allow local-network access when the browser prompts. An HTTPS-hosted page may block the printer's insecure WebSocket and HTTP camera.
