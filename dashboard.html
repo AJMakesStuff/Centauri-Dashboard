@@ -93,8 +93,11 @@
       </select>
       <label for="printerIp">Printer IP address</label><input id="printerIp" required placeholder="192.168.1.50"
         pattern="[A-Za-z0-9.:\-]+" />
-      <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber"
-        pattern="[^\/+#\s]+" placeholder="000000000001d354" />
+      <label for="serialNumber" id="serialLabel">Serial Number</label>
+      <div class="field-progress">
+        <input id="serialNumber" pattern="[^\/+#\s]+" placeholder="000000000001d354" />
+        <span class="spinner" id="serialSpinner" aria-hidden="true" hidden></span>
+      </div>
       <p id="serialHint">Optional on the Centauri Carbon. Leave it blank and the dashboard reads the ID from the printer
         once it connects.</p>
       <div id="cc2Settings" hidden>

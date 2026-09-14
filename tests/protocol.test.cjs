@@ -184,9 +184,11 @@ test('CC1 discovery gives up into settings with a notice when the printer stays 
   const t = setup({ printerIp: '192.168.1.9' }), socket = t.sockets[0];
   socket.readyState = 1; socket.onopen();
   assert.equal(socket.sent.length, 0);
+  assert.equal(t.element('serialSpinner').hidden, false);
   const discovery = [...t.timers.values()].find(timer => timer.ms === 8000);
   assert.ok(discovery, 'a discovery timeout is scheduled');
   discovery.fn();
+  assert.equal(t.element('serialSpinner').hidden, true);
   assert.equal(t.element('settingsDialog').open, true);
   assert.match(t.element('settingsNotice').textContent, /No printer ID arrived/);
   assert.equal(t.element('serialNumber').required, false);
@@ -230,4 +232,34 @@ test('a blocked settings save explains itself instead of silently doing nothing'
   assert.match(t.element('settingsNotice').textContent, /serial number/i);
   form.events.invalid({ target: { id: 'printerIp' } });
   assert.match(t.element('settingsNotice').textContent, /printer IP address/i);
+});
+
+test('an empty Serial Number keeps the dialog open with a spinner until the printer identifies itself', () => {
+  const t = setup({});
+  assert.equal(t.element('settingsDialog').open, true);
+  assert.equal(Boolean(t.element('serialSpinner').hidden), false);
+  t.element('printerIp').value = '192.168.20.129';
+  t.element('settingsForm').onsubmit({ preventDefault() { } });
+  assert.equal(t.element('settingsDialog').open, true);
+  assert.equal(t.element('serialSpinner').hidden, false);
+  const socket = t.sockets.at(-1);
+  socket.readyState = 1; socket.onopen();
+  assert.equal(t.element('serialSpinner').hidden, false);
+  assert.match(t.element('connection').innerHTML, /identify itself/);
+  socket.onmessage({ data: JSON.stringify({ MainboardID: '000000000001d354', Topic: 'sdcp/status/000000000001d354' }) });
+  assert.equal(t.element('serialSpinner').hidden, true);
+  assert.equal(t.element('settingsDialog').open, false);
+  assert.equal(t.element('serialNumber').value, '000000000001d354');
+  assert.match(t.element('connection').innerHTML, /Receiving live printer status/);
+});
+
+test('discovery that cannot reach the printer says so in the open dialog', () => {
+  const t = setup({});
+  t.element('printerIp').value = '192.168.20.250';
+  t.element('settingsForm').onsubmit({ preventDefault() { } });
+  const socket = t.sockets.at(-1);
+  socket.readyState = 1; socket.onopen();
+  socket.onclose();
+  assert.equal(t.element('settingsDialog').open, true);
+  assert.match(t.element('settingsNotice').textContent, /Could not reach 192\.168\.20\.250/);
 });

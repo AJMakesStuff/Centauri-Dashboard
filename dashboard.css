@@ -656,6 +656,39 @@ dialog .settings-notice {
     color: var(--danger);
 }
 
+.field-progress {
+    position: relative;
+}
+
+.field-progress input {
+    padding-right: 40px;
+}
+
+.field-progress .spinner {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    width: 15px;
+    height: 15px;
+    margin-top: -8px;
+    border: 2px solid #ffffff26;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: field-spinner .7s linear infinite;
+}
+
+@keyframes field-spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion:reduce) {
+    .field-progress .spinner {
+        animation-duration: 2.5s;
+    }
+}
+
 label {
     display: block;
     margin: 14px 0 5px;

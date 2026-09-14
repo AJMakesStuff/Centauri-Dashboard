@@ -107,6 +107,11 @@ function mainboardIdFrom(raw) {
   const candidate = raw?.Data?.MainboardID ?? raw?.MainboardID ?? topic;
   return typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate) ? candidate : undefined;
 }
+let settingsPendingClose = false;
+function setDiscoveryPending(pending) {
+  $('serialSpinner').hidden = !pending;
+  $('serialNumber').setAttribute('aria-busy', String(pending));
+}
 function startSession(active, cc2) {
   setConnection('Receiving live printer status.', true);
   send(0, {}, active); send(1, {}, active); send(386, { Enable: 1 }, active);
@@ -139,9 +144,11 @@ function connect() {
     if (version !== connectionVersion) return;
     retryDelay = 1500;
     if (discovering) {
+      setDiscoveryPending(true);
       setConnection('Waiting for the printer to identify itself…');
       discoveryTimer = setTimeout(() => {
         if (version !== connectionVersion) return;
+        setDiscoveryPending(false); settingsPendingClose = false;
         stopConnection();
         openSettings('No printer ID arrived. The printer only announces itself while it is idle or printing — check that it is powered on, or enter the Serial Number from its interface.');
       }, SERIAL_DISCOVERY_TIMEOUT);
@@ -155,7 +162,15 @@ function connect() {
       const data = JSON.parse(e.data);
       if (discovering && !saved.serialNumber) {
         const serialNumber = mainboardIdFrom(data);
-        if (serialNumber) { clearTimeout(discoveryTimer); saved.serialNumber = serialNumber; localStorage.setItem('dashboard', JSON.stringify(saved)); startSession(active, cc2); }
+        if (serialNumber) {
+          clearTimeout(discoveryTimer);
+          saved.serialNumber = serialNumber;
+          localStorage.setItem('dashboard', JSON.stringify(saved));
+          $('serialNumber').value = serialNumber;
+          setDiscoveryPending(false);
+          if (settingsPendingClose) { settingsPendingClose = false; if ($('settingsDialog').open) $('settingsDialog').close(); }
+          startSession(active, cc2);
+        }
       }
       handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data);
     } catch { }
@@ -166,6 +181,7 @@ function connect() {
     clearInterval(heartbeatTimer); heartbeatTimer = undefined; socket = undefined;
     const wait = retryDelay; retryDelay = Math.min(retryDelay * 2, 30000);
     setConnection(`${connectionError || 'Connection lost.'} Retrying in ${Math.ceil(wait / 1000)} seconds…`);
+    if (discovering && $('settingsDialog').open) { $('settingsNotice').hidden = false; $('settingsNotice').textContent = `Could not reach ${saved.printerIp}. Check the address and that the printer is powered on.`; }
     reconnectTimer = setTimeout(connect, wait);
   };
 }
@@ -237,7 +253,17 @@ $('settingsForm').addEventListener('invalid', event => {
   const requirement = settingsRequirements[event.target.id];
   if (requirement) { $('settingsNotice').hidden = false; $('settingsNotice').textContent = requirement; }
 }, true);
-$('settingsForm').onsubmit = e => { e.preventDefault(); saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim(); localStorage.setItem('dashboard', JSON.stringify(saved)); $('settingsDialog').close(); stopConnection(); connect(); };
+$('settingsForm').onsubmit = e => {
+  e.preventDefault();
+  saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim();
+  localStorage.setItem('dashboard', JSON.stringify(saved));
+  $('settingsNotice').hidden = true;
+  // Leave the dialog up while the printer is asked for its ID, so the spinner has somewhere to live.
+  const detecting = saved.printerModel !== 'cc2' && !saved.serialNumber;
+  settingsPendingClose = detecting; setDiscoveryPending(detecting);
+  if (!detecting) $('settingsDialog').close();
+  stopConnection(); connect();
+};
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
 addEventListener('pagehide', stopConnection);
 connect();
