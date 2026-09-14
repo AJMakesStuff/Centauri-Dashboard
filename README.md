@@ -31,7 +31,7 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 ## Requirements
 
 - A powered-on CC1 or CC2 reachable over the local network.
-- CC1: printer LAN IP address and Serial Number.
+- CC1: printer LAN IP address. The Serial Number is optional; the dashboard reads it from the printer by itself.
 - CC2: printer LAN IP address, printer serial number (SN), and LAN access code from its touchscreen. Enable **LAN Only** mode.
 - Firmware exposing the model's WebSocket endpoint and camera stream below. CC2 requires MQTT over WebSocket on port 9001; a TCP-only MQTT endpoint on port 1883 cannot be used directly by a browser.
 
@@ -41,11 +41,11 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 - Open dashboard.html in your browser.
 - In **Settings**, enter:
    - Printer model: **Centauri Carbon (CC1)** or **Centauri Carbon 2 (CC2)**. Existing settings default to CC1.
-   - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port.
-   - Serial Number: For CC1, the Serial Number from its interface or SDCP discovery. For CC2, the Serial Number from its interface. The dashboard does not discover this automatically.
+   - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port. On CC1, editing this field starts looking for the printer's ID right away; the spinner in the Serial Number field shows it working, and the ID appears there before you save.
+   - Serial Number: For CC1, leave this **blank** and the dashboard reads the printer's ID from the connection and saves it. Enter it manually (the printer shows it in its interface, or use SDCP discovery) if you prefer. The printer only announces the ID while it is idle or printing, so a paused or stopped printer needs the manual value. For CC2, the SN is required: it forms part of the MQTT topic.
    - LAN access code (CC2 only): The code shown on the printer touchscreen.
    - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
-- Select **Save**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings.
+- Select **Save**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings. On CC1 with the Serial Number left blank, the dialog stays open with a spinner in that field while the printer's ID is read, then closes on its own once it arrives.
 
 ## Using the dashboard
 
@@ -69,12 +69,13 @@ The browser connects directly to these printer endpoints:
    - CC1: None
    - CC2: Username `elegoo`, password = LAN access code
 
-The application requests status, attributes, and camera information on connection, and sends a heartbeat every 15 seconds. CC2 first subscribes and registers its client, spaces API requests at least 2.2 seconds apart, merges partial status updates, and polls full status during heartbeats. CC2 progress and remaining time use the printer's reported values. A camera URL returned by the printer replaces the default only when no custom override is set. Commands queued for CC2 are discarded on disconnect and never replayed after reconnection.
+The application requests status, attributes, and camera information on connection, and sends a heartbeat every 15 seconds. On a CC1 connection with no stored Serial Number, it waits for the printer's own status or attribute frame first, reads the ID from that frame, and only then requests anything. CC2 first subscribes and registers its client, spaces API requests at least 2.2 seconds apart, merges partial status updates, and polls full status during heartbeats. CC2 progress and remaining time use the printer's reported values. A camera URL returned by the printer replaces the default only when no custom override is set. Commands queued for CC2 are discarded on disconnect and never replayed after reconnection.
 
-Settings are stored in browser local storage under `dashboard`, including the CC2 access code in plain text. They are sent only to the configured printer. To reset them, clear this site's local storage using your browser's developer tools or site-data settings. Using a different browser, hostname, or port creates a separate set of stored settings.
+Settings are stored in browser local storage under `dashboard`, including the CC2 access code and any detected CC1 Serial Number in plain text. They are sent only to the configured printer. To reset them, clear this site's local storage using your browser's developer tools or site-data settings. Using a different browser, hostname, or port creates a separate set of stored settings.
 
 ## Troubleshooting
 
+- Settings opens by itself saying no printer ID arrived: for CC1 the Serial Number is filled in automatically, but the printer only announces it while it is idle or printing. Wake the printer and reconnect, or paste the Serial Number from its interface.
 - CC2 cannot connect: Enable LAN Only mode, verify the printer SN and access code, and check access to port 9001. Authentication and registration failures appear in the connection status. If firmware does not expose MQTT over WebSocket, this browser-only dashboard cannot connect through port 1883 instead.
 - Browser blocks local connections: Open the local HTML file or serve it over local HTTP, and allow local-network access when the browser prompts. An HTTPS-hosted page may block the printer's insecure WebSocket and HTTP camera.
 - CC2 camera unavailable: Try `http://<printer-ip>:8080/?action=stream` directly, or supply a custom camera URL.
