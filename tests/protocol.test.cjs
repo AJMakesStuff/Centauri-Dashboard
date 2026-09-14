@@ -111,7 +111,7 @@ test('saving a second printer preserves the first and enables persistent quick s
 });
 
 test('incomplete second profile hides switch and cancelling settings preserves saved profiles', () => {
-  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.2' } } });
+  const t = setup({ ...cc2, profiles: { cc1: { serialNumber: 'board' } } });
   assert.equal(t.element('printerSwitch').hidden, true);
   t.element('settingsButton').onclick();
   t.element('accessCode').value = 'unsaved';
@@ -122,6 +122,33 @@ test('incomplete second profile hides switch and cancelling settings preserves s
   t.element('settingsButton').onclick();
   assert.equal(t.element('accessCode').value, 'test-code');
 });
+test('quick switching supports CC1 discovery and retains the discovered ID', () => {
+  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.9' } } });
+  assert.equal(t.element('printerSwitch').hidden, false);
+  t.element('switchCC1').onclick();
+  const socket = t.sockets.at(-1);
+  socket.readyState = 1; socket.onopen();
+  socket.onmessage({ data: JSON.stringify({ Topic: 'sdcp/status/000000000001d354' }) });
+  assert.equal(t.stored().profiles.cc1.serialNumber, '000000000001d354');
+  t.element('switchCC2').onclick();
+  assert.equal(t.clients.at(-1).options.password, 'test-code');
+  t.element('switchCC1').onclick();
+  const next = t.sockets.at(-1);
+  next.readyState = 1; next.onopen();
+  assert.equal(JSON.parse(next.sent[0]).Data.serialNumber, '000000000001d354');
+});
+
+test('migration preserves recent top-level edits and the other printer profile', () => {
+  const t = setup({ ...cc2, profiles: {
+    cc2: { ...cc2, accessCode: 'outdated' },
+    cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }
+  } });
+  assert.equal(t.clients[0].options.password, 'test-code');
+  t.element('switchCC1').onclick();
+  assert.equal(t.stored().profiles.cc2.accessCode, 'test-code');
+  assert.equal(t.stored().serialNumber, 'board');
+});
+
 test('CC1 over LAN HTTP starts camera and sends requests without randomUUID', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' }, false);
   const socket = t.sockets[0];

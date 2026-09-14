@@ -1,5 +1,39 @@
 const $ = id => document.getElementById(id);
 const saved = JSON.parse(localStorage.getItem('dashboard') || '{}');
+const connectionFields = ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode'];
+saved.printerModel = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
+saved.profiles ||= {};
+// Recent versions saved edits only at the top level; preserve those edits on migration.
+saved.profiles[saved.printerModel] = Object.fromEntries(connectionFields.map(key =>
+  [key, saved[key] ?? saved.profiles[saved.printerModel]?.[key] ?? '']));
+Object.assign(saved, saved.profiles[saved.printerModel]);
+let settingsDrafts, editingModel;
+function saveActiveProfile() {
+  saved.profiles[saved.printerModel] = Object.fromEntries(connectionFields.map(key => [key, saved[key] || '']));
+  localStorage.setItem('dashboard', JSON.stringify(saved));
+}
+function profileReady(model) {
+  const profile = saved.profiles[model];
+  return Boolean(profile?.printerIp && (model !== 'cc2' || (profile.serialNumber && profile.accessCode)));
+}
+function updatePrinterSwitch() {
+  $('printerSwitch').hidden = !(profileReady('cc1') && profileReady('cc2'));
+  $('switchCC1').setAttribute('aria-pressed', String(saved.printerModel === 'cc1'));
+  $('switchCC2').setAttribute('aria-pressed', String(saved.printerModel === 'cc2'));
+}
+function selectPrinter(model) {
+  if (saved.printerModel === model || !profileReady(model)) return;
+  cancelSerialProbe(true);
+  stopConnection();
+  settingsPendingClose = false;
+  saveActiveProfile();
+  saved.printerModel = model;
+  for (const key of connectionFields) saved[key] = saved.profiles[model][key] || '';
+  saveActiveProfile();
+  retryDelay = 1500;
+  updatePrinterSwitch();
+  connect();
+}
 let socket, reconnectTimer, discoveryTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
 const states = { 0: 'Idle', 1: 'Printing', 2: 'Transferring', 3: 'Calibrating', 4: 'Testing' };
 let controlsConnected = false, printStatus = null, activePrint = false, pendingControl;
@@ -206,7 +240,8 @@ function connect() {
         if (serialNumber) {
           clearTimeout(discoveryTimer);
           saved.serialNumber = serialNumber;
-          localStorage.setItem('dashboard', JSON.stringify(saved));
+          saveActiveProfile();
+          updatePrinterSwitch();
           $('serialNumber').value = serialNumber;
           setDiscoveryPending(false);
           if (settingsPendingClose) { settingsPendingClose = false; if ($('settingsDialog').open) $('settingsDialog').close(); }
@@ -289,13 +324,25 @@ function updateModelSettings() {
   else if ($('settingsDialog').open) scheduleSerialProbe();
 }
 function openSettings(notice = '') {
-  for (const key of ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode']) $(key).value = saved[key] || '';
-  $('printerModel').value = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
+  settingsDrafts = JSON.parse(JSON.stringify(saved.profiles));
+  editingModel = saved.printerModel;
+  for (const key of connectionFields) $(key).value = saved[key] || '';
+  $('printerModel').value = editingModel;
   updateModelSettings();
   $('settingsNotice').hidden = !notice; $('settingsNotice').textContent = notice;
   $('settingsDialog').showModal();
 }
-$('printerModel').onchange = updateModelSettings;
+$('printerModel').onchange = () => {
+  cancelSerialProbe(true);
+  settingsDrafts[editingModel] = Object.fromEntries(connectionFields.map(key => [key, $(key).value]));
+  editingModel = $('printerModel').value;
+  for (const key of connectionFields) $(key).value = settingsDrafts[editingModel]?.[key] || '';
+  $('settingsNotice').hidden = true;
+  updateModelSettings();
+};
+$('switchCC1').onclick = () => selectPrinter('cc1');
+$('switchCC2').onclick = () => selectPrinter('cc2');
+updatePrinterSwitch();
 $('printerIp').addEventListener('input', scheduleSerialProbe);
 $('settingsButton').onclick = () => openSettings();
 $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightState(next); send(403, { LightStatus: { SecondLight: next ? 1 : 0 } }); };
@@ -329,7 +376,8 @@ $('settingsForm').addEventListener('invalid', event => {
 $('settingsForm').onsubmit = e => {
   e.preventDefault();
   saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim();
-  localStorage.setItem('dashboard', JSON.stringify(saved));
+  saveActiveProfile();
+  updatePrinterSwitch();
   $('settingsNotice').hidden = true;
   // Leave the dialog up while the printer is asked for its ID, so the spinner has somewhere to live.
   const detecting = saved.printerModel !== 'cc2' && !saved.serialNumber;
