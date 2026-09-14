@@ -43,6 +43,12 @@
           <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print" disabled>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" /></svg></button>
         </div>
+        <details class="device-panel">
+          <summary>Fans &amp; temperature</summary>
+          <div id="deviceControlRows"></div>
+          <p class="device-hint">Set a target or choose Off. Fan speeds use percent.</p>
+          <p id="deviceControlStatus" class="print-control-status" role="status" aria-live="polite">Connect to control your printer.</p>
+        </details>
         <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
         </div>
       </div>

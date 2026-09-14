@@ -23,6 +23,7 @@ CC2 support includes the existing dashboard features: camera, progress, layers, 
 - Automatic reconnection with retry delays increasing from 1.5 seconds to a maximum of 30 seconds, plus a manual refresh button.
 - Responsive dark interface and connection settings saved in the current browser.
 - Print control buttons.
+- Fan and temperature controls
 
 The compact print-control panel can stop, pause, and resume the current print. Play resumes a paused job; it does not start a new file. Play is enabled only for a paused job. All buttons are disabled without an active job, while disconnected, or while awaiting a command response. Pause is disabled while paused or transitioning. Settings includes switches for print controls, temperatures, and the entire stats panel that immediately save visibility in this browser. Hiding the stats panel hides job details and temperatures while keeping the camera buttons independent; the temperature preference is retained when the stats panel is shown again. Controls overlay the bottom-right corner of the camera in standard view and sit below LIVE with extra spacing in fullscreen. It does not currently upload files, start new prints, or change temperature targets.
 

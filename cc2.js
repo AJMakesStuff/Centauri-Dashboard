@@ -81,6 +81,11 @@ class CC2Connection {
       TempOfNozzle: s.extruder?.temperature, TempTargetNozzle: s.extruder?.target,
       TempOfHotbed: s.heater_bed?.temperature, TempTargetHotbed: s.heater_bed?.target,
       TempOfBox: s.ztemperature_sensor?.temperature,
+      CurrentFanSpeed: {
+        ModelFan: s.fans?.fan?.speed,
+        AuxiliaryFan: s.fans?.aux_fan?.speed,
+        BoxFan: s.fans?.box_fan?.speed
+      },
       LightStatus: s.led ? { SecondLight: s.led.status } : undefined,
       PrintInfo: {
         Filename: print.filename, Status: code, CurrentLayer: print.current_layer,
@@ -105,15 +110,29 @@ class CC2Connection {
       return;
     }
     const data = JSON.parse(payload).Data;
-    const method = { 0: 1002, 1: 1001, 386: 1042, 129: 1021, 130: 1022, 131: 1023, 403: 1029 }[data.Cmd];
+    let method = { 0: 1002, 1: 1001, 386: 1042, 129: 1021, 130: 1022, 131: 1023, 403: 1029 }[data.Cmd];
     if (!method) throw new Error('Unsupported CC2 command');
-    this.enqueue(method, method === 1029 ? { power: data.Data.LightStatus.SecondLight } : {}, data.RequestID);
+    let params = {};
+    if (data.Cmd === 403) {
+      const payload = data.Data;
+      if (payload.TargetFanSpeed) {
+        method = 1030;
+        for (const [source, target] of Object.entries({ ModelFan: 'fan', AuxiliaryFan: 'aux_fan', BoxFan: 'box_fan' })) {
+          if (payload.TargetFanSpeed[source] != null) params[target] = Math.round(payload.TargetFanSpeed[source] * 255 / 100);
+        }
+      } else if ('TempTargetNozzle' in payload || 'TempTargetHotbed' in payload) {
+        method = 1028;
+        if ('TempTargetNozzle' in payload) params.extruder = payload.TempTargetNozzle;
+        if ('TempTargetHotbed' in payload) params.heater_bed = payload.TempTargetHotbed;
+      } else params = { power: payload.LightStatus.SecondLight };
+    }
+    this.enqueue(method, params, data.RequestID);
   }
   enqueue(method, params, id) {
     if (method === 1002 && this.queue.some(item => item.method === 1002)) return;
     const item = { method, params, id };
     // User actions take priority over background reads; requests are never replayed after disconnect.
-    if ([1021, 1022, 1023, 1029].includes(method)) this.queue.unshift(item);
+    if ([1021, 1022, 1023, 1028, 1029, 1030].includes(method)) this.queue.unshift(item);
     else this.queue.push(item);
     this.flush();
   }

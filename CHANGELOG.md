@@ -2,7 +2,17 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.9 (Current)
+## 0.2.0 (Current)
+
+## Added
+
+- Added temperature/fan controls panel options
+
+## Changed
+
+- Increased transparency on print controls panel
+
+## 0.1.9
 
 ## Added
 

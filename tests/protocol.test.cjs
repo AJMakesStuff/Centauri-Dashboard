@@ -517,3 +517,44 @@ test('combined fullscreen keeps parent panel toggles hidden', () => {
   assert.equal(t.element('statsPanelToggle').hidden, true);
   assert.equal(t.element('controlsPanelToggle').hidden, true);
 });
+
+test('device controls validate CC1 targets, correlate ACKs, and clear on disconnect', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  const count = socket.sent.length;
+  for (const value of ['', -1, 321, 1.5, 'NaN']) t.run(`setDeviceControl('nozzle', ${JSON.stringify(value)})`);
+  assert.equal(socket.sent.length, count);
+  t.run("setDeviceControl('nozzle', 210)");
+  const request = JSON.parse(socket.sent.at(-1));
+  assert.deepEqual(request.Data.Data, { TempTargetNozzle: 210 });
+  assert.equal(t.element('bedApply').disabled, true);
+  t.run("handleDeviceResponse({Data:{RequestID:'unrelated',Data:{Ack:0}}})");
+  assert.equal(t.element('bedApply').disabled, true);
+  t.run(`handleDeviceResponse(${JSON.stringify({ Data: { RequestID: request.Data.RequestID, Data: { Ack: 1 } } })})`);
+  assert.match(t.element('deviceControlStatus').textContent, /rejected/);
+  t.run("setDeviceControl('boxFan', 75)");
+  assert.deepEqual(JSON.parse(socket.sent.at(-1)).Data.Data, { TargetFanSpeed: { BoxFan: 75 } });
+  t.run('resetPrintControls(false)');
+  assert.equal(t.element('boxFanOff').disabled, true);
+  assert.equal(t.run('pendingDevice'), undefined);
+});
+
+test('CC2 maps heater and fan commands independently and reports device status', () => {
+  const t = setup(cc2); t.register();
+  t.run("setDeviceControl('auxFan', 50)"); t.tick();
+  let request = t.clients[0].sent.at(-1).data;
+  assert.equal(request.method, 1030);
+  assert.deepEqual(request.params, { aux_fan: 128 });
+  t.receive({ id: request.id, result: { error_code: 0 } });
+  assert.match(t.element('deviceControlStatus').textContent, /accepted/);
+  t.run("setDeviceControl('bed', 60)"); t.tick();
+  request = t.clients[0].sent.at(-1).data;
+  assert.equal(request.method, 1028);
+  assert.deepEqual(request.params, { heater_bed: 60 });
+  t.receive({ id: request.id, result: { error_code: 0 } });
+  t.element('nozzleOff').onclick(); t.tick();
+  assert.deepEqual(t.clients[0].sent.at(-1).data.params, { extruder: 0 });
+  t.receive({ method: 6000, result: { extruder: { target: 210 }, fans: { fan: { speed: 75 } } } });
+  assert.equal(t.element('modelFanReported').textContent, 'Current 75%');
+  assert.equal(t.element('nozzleReported').textContent, 'Target 210°C');
+});

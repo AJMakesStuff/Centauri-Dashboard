@@ -366,7 +366,7 @@ button.primary {
     padding: 8px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: #071018e6;
+    background: #0710189c;
 }
 
 .print-controls {
@@ -390,7 +390,7 @@ button.primary {
     padding: 8px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: #071018e6;
+    background: #0710189c;
 }
 
 .print-control-panel .print-controls {
@@ -925,3 +925,15 @@ select {
 /* The combined fullscreen view must never reveal the parent printer's UI. */
 .shell.both-view > .camera, .shell.both-view > .overlay,
 .shell.both-view > .status, .shell.both-view #lightToggle { display: none; }
+
+.device-panel { margin-top: 8px; border-top: 1px solid var(--line); font-size: .78rem; }
+.device-panel summary { padding: 10px 2px; cursor: pointer; font-weight: 600; }
+.device-control-row { margin: 0 0 10px; }
+.device-control-row label { display: flex; justify-content: space-between; margin: 0 0 5px; font-size: .78rem; }
+.device-control-row label span, .device-hint { color: var(--muted); }
+.device-control-inputs { display: flex; align-items: center; gap: 5px; }
+.device-control-inputs input { width: 0; min-width: 0; flex: 1; margin: 0; padding: 6px; font-size: .78rem; }
+.device-control-inputs button { padding: 6px 8px; font-size: .75rem; }
+.device-control-inputs button:disabled, .device-control-inputs input:disabled { opacity: .45; cursor: not-allowed; }
+.device-hint { font-size: .7rem; line-height: 1.4; }
+#controlsPanelContent { max-height: min(480px, 65vh); overflow-y: auto; }

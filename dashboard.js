@@ -90,6 +90,65 @@ function selectPrinter(model) {
 let socket, reconnectTimer, discoveryTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
 const states = { 0: 'Idle', 1: 'Printing', 2: 'Transferring', 3: 'Calibrating', 4: 'Testing' };
 let controlsConnected = false, printStatus = null, activePrint = false, pendingControl;
+const deviceControls = {
+  nozzle: { label: 'Nozzle', max: 320, field: 'TempTargetNozzle' },
+  bed: { label: 'Bed', max: 110, field: 'TempTargetHotbed' },
+  modelFan: { label: 'Part fan', max: 100, fan: 'ModelFan' },
+  auxFan: { label: 'Auxiliary fan', max: 100, fan: 'AuxiliaryFan' },
+  boxFan: { label: 'Chamber fan', max: 100, fan: 'BoxFan' }
+};
+let pendingDevice;
+function updateDeviceControls() {
+  const ready = controlsConnected && socket?.readyState === WebSocket.OPEN && !pendingDevice;
+  for (const key of Object.keys(deviceControls)) {
+    for (const suffix of ['Setting', 'Apply', 'Off']) $(key + suffix).disabled = !ready;
+  }
+}
+function setDeviceControl(key, value) {
+  if (!controlsConnected || socket?.readyState !== WebSocket.OPEN || pendingDevice) return;
+  const control = deviceControls[key];
+  if (!control) return;
+  if (String(value).trim() === '' || !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > control.max) {
+    show('deviceControlStatus', 'Enter a whole number from 0 to ' + control.max + ' for ' + control.label.toLowerCase() + '.');
+    return;
+  }
+  value = Number(value);
+  const request = message(403, control.fan ? { TargetFanSpeed: { [control.fan]: value } } : { [control.field]: value });
+  pendingDevice = { id: request.Data.RequestID, label: control.label };
+  show('deviceControlStatus', control.label + ': ' + value + (control.fan ? '%' : '°C') + ' requested…');
+  updateDeviceControls();
+  pendingDevice.timer = setTimeout(() => {
+    pendingDevice = undefined;
+    show('deviceControlStatus', 'No confirmation received. Check printer status before retrying.');
+    updateDeviceControls();
+  }, 15000);
+  try { socket.send(JSON.stringify(request)); }
+  catch {
+    clearTimeout(pendingDevice.timer);
+    pendingDevice = undefined;
+    show('deviceControlStatus', 'Command could not be sent. Reconnect and try again.');
+    updateDeviceControls();
+  }
+}
+function handleDeviceResponse(raw) {
+  const response = raw.Data;
+  if (!pendingDevice || response?.RequestID !== pendingDevice.id || response.Data?.Ack == null) return;
+  const { label, timer } = pendingDevice;
+  clearTimeout(timer);
+  pendingDevice = undefined;
+  show('deviceControlStatus', Number(response.Data.Ack) === 0 ? label + ' accepted. Waiting for updated printer status.' : label + ' rejected by printer (code ' + response.Data.Ack + ').');
+  updateDeviceControls();
+  send(0, {});
+}
+for (const [key, control] of Object.entries(deviceControls)) {
+  const form = document.createElement('form');
+  form.className = 'device-control-row';
+  const unit = control.fan ? '%' : '°C';
+  form.innerHTML = '<label for="' + key + 'Setting">' + control.label + ' <span id="' + key + 'Reported">—</span></label><div class="device-control-inputs"><input id="' + key + 'Setting" type="number" min="0" max="' + control.max + '" step="1" placeholder="0–' + control.max + '" aria-label="' + control.label + ' target (' + unit + ')" required disabled /><span>' + unit + '</span><button id="' + key + 'Apply" type="submit" disabled>Set</button><button id="' + key + 'Off" type="button" disabled>Off</button></div>';
+  $('deviceControlRows').append(form);
+  form.onsubmit = event => { event.preventDefault(); setDeviceControl(key, $(key + 'Setting').value); };
+  $(key + 'Off').onclick = () => setDeviceControl(key, 0);
+}
 function updatePrintControls() {
   const ready = controlsConnected && socket?.readyState === WebSocket.OPEN && !pendingControl;
   $('resumePrint').disabled = !ready || !activePrint || printStatus !== 6;
@@ -98,6 +157,14 @@ function updatePrintControls() {
 }
 function resetPrintControls(connected) {
   controlsConnected = connected;
+  clearTimeout(pendingDevice?.timer);
+  pendingDevice = undefined;
+  updateDeviceControls();
+  show('deviceControlStatus', connected ? 'Ready. Choose a target to apply.' : 'Connect to control your printer.');
+  for (const key of Object.keys(deviceControls)) {
+    $(key + 'Setting').value = '';
+    show(key + 'Reported', '—');
+  }
   printStatus = null;
   activePrint = false;
   clearTimeout(pendingControl?.timer);
@@ -165,6 +232,10 @@ function startCamera(url) { if (!url) return; const img = $('camera'); img.src =
 function updateStatus(raw) {
   const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value));
   if (!s || typeof s !== 'object' || !('PrintInfo' in s || 'CurrentStatus' in s || 'TempOfNozzle' in s)) return;
+  for (const [key, control] of Object.entries(deviceControls)) {
+    const value = control.fan ? s.CurrentFanSpeed?.[control.fan] : s[control.field];
+    if (value != null && Number.isFinite(Number(value))) show(key + 'Reported', (control.fan ? 'Current ' : 'Target ') + Math.round(Number(value)) + (control.fan ? '%' : '°C'));
+  }
   const info = s.PrintInfo || {};
   const total = Number(info.TotalTicks), current = Number(info.CurrentTicks);
   const machineCode = Number(Array.isArray(s.CurrentStatus) ? s.CurrentStatus[0] : s.CurrentStatus);
@@ -334,7 +405,7 @@ function connect() {
           startSession(active, cc2);
         }
       }
-      handlePrintResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data);
+      handlePrintResponse(data); handleDeviceResponse(data); const video = data.Data?.Data?.VideoUrl || data.Data?.VideoUrl; if (video && !saved.cameraUrl) startCamera(video); updateStatus(data);
     } catch { }
   };
   active.onerror = event => { if (version === connectionVersion) { connectionError = cc2 ? event.message || 'CC2 connection failed.' : ''; setConnection(connectionError || 'Connection issue detected; attempting to recover…'); } };
