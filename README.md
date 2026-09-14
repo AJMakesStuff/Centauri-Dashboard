@@ -38,7 +38,7 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 ## Setup
 
 - Download or copy the project files, including `cc2.js` and the `vendor` folder, into one folder.
-- Open dashboard.html in your browser.
+- Open dashboard.html in your browser or for better performance follow the Docker steps below.
 - In **Settings**, enter:
    - Printer model: **Centauri Carbon (CC1)** or **Centauri Carbon 2 (CC2)**. Existing settings default to CC1.
    - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port. On CC1, editing this field starts looking for the printer's ID right away; the spinner in the Serial Number field shows it working, and the ID appears there before you save.
