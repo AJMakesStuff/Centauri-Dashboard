@@ -10,7 +10,8 @@ function setup(settings = {}, secureContext = true) {
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
       value: '', style: {}, classList: { toggle() { } },
-      setAttribute() { }, removeAttribute() { }, after() { }, showModal() { this.open = true; }, close() { this.open = false; }
+      setAttribute() { }, removeAttribute() { }, after() { }, showModal() { this.open = true; }, close() { this.open = false; },
+      addEventListener(type, fn) { (this.events ||= {})[type] = fn; }
     });
     return elements.get(id);
   };
@@ -198,4 +199,35 @@ test('CC2 still requires its serial number, and never tries CC1 discovery', () =
   assert.equal(t.element('settingsDialog').open, true);
   assert.equal(t.element('serialNumber').required, true);
   assert.equal(t.element('serialHint').hidden, true);
+});
+
+test('settings form patterns are valid under the v flag Chrome uses, and match their input', () => {
+  const html = fs.readFileSync('dashboard.html', 'utf8');
+  const fields = (html.match(/<(?:input|select|textarea)[^>]*>/g) || [])
+    .map(tag => ({ id: (tag.match(/id="([^"]+)"/) || [])[1], pattern: (tag.match(/pattern="([^"]*)"/) || [])[1] }))
+    .filter(field => field.id && field.pattern);
+  assert.deepEqual(fields.map(field => field.id), ['printerIp', 'serialNumber']);
+  for (const { id, pattern } of fields) {
+    // Chrome compiles the pattern with the v flag and drops the constraint when it throws.
+    const regex = new RegExp(`^(?:${pattern})$`, 'v');
+    if (id === 'printerIp') {
+      assert.ok(regex.test('192.168.20.129'));
+      assert.ok(regex.test('printer.local'));
+      assert.equal(regex.test('192.168.20.129/evil'), false);
+    }
+    if (id === 'serialNumber') {
+      assert.ok(regex.test('000000000001d354'));
+      assert.equal(regex.test('bad/serial'), false);
+    }
+  }
+});
+
+test('a blocked settings save explains itself instead of silently doing nothing', () => {
+  const t = setup({}), form = t.element('settingsForm');
+  assert.equal(typeof form.events.invalid, 'function');
+  form.events.invalid({ target: { id: 'serialNumber' } });
+  assert.equal(t.element('settingsNotice').hidden, false);
+  assert.match(t.element('settingsNotice').textContent, /serial number/i);
+  form.events.invalid({ target: { id: 'printerIp' } });
+  assert.match(t.element('settingsNotice').textContent, /printer IP address/i);
 });

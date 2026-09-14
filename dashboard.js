@@ -226,6 +226,17 @@ document.addEventListener('fullscreenchange', () => {
   else $('camera').after($('lightToggle'));
 });
 $('closeButton').onclick = () => $('settingsDialog').close();
+// Chrome's own validation bubble is easy to miss inside a modal dialog, and a blocked
+// submit otherwise looks like the Save button doing nothing.
+const settingsRequirements = {
+  printerIp: 'Enter the printer IP address.',
+  serialNumber: 'Enter the printer serial number, or use the Centauri Carbon (CC1) and let the dashboard detect it.',
+  accessCode: 'Enter the CC2 LAN access code from the printer touchscreen.'
+};
+$('settingsForm').addEventListener('invalid', event => {
+  const requirement = settingsRequirements[event.target.id];
+  if (requirement) { $('settingsNotice').hidden = false; $('settingsNotice').textContent = requirement; }
+}, true);
 $('settingsForm').onsubmit = e => { e.preventDefault(); saved.printerModel = $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim(); localStorage.setItem('dashboard', JSON.stringify(saved)); $('settingsDialog').close(); stopConnection(); connect(); };
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
 addEventListener('pagehide', stopConnection);
