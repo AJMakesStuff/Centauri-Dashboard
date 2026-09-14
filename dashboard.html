@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Centauri Carbon Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Centauri Carbon</h1>
+        <p class="sub">Local printer dashboard</p>
+      </div>
+      <div class="button-group"><button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button></div>
+    </header>
+    <section class="camera" aria-label="Printer camera">
+      <div class="empty" id="cameraEmpty">Connect your printer to start the live camera feed.</div>
+      <img id="camera" alt="Live view from the printer camera" hidden />
+      <button class="light-toggle" id="lightToggle" type="button" aria-label="Toggle chamber light" aria-pressed="false"
+        title="Toggle chamber light" disabled>💡</button>
+      <div class="live" id="liveBadge"><span class="dot"></span><span id="liveText">OFFLINE</span></div>
+      <div class="print-control-panel" id="printControlPanel">
+        <div class="print-controls" role="group" aria-label="Print controls">
+          <button id="stopPrint" class="stop-print" type="button" title="Stop the current print" disabled><span
+              aria-hidden="true">■</span> Stop</button>
+          <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print" disabled><span
+              aria-hidden="true">▶</span> Play</button>
+          <button id="pausePrint" type="button" title="Pause the current print" disabled><span
+              aria-hidden="true">Ⅱ</span> Pause</button>
+        </div>
+        <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+    <section class="overlay" id="overlay">
+      <section class="job-details">
+        <div class="overlay-heading">
+          <div class="label">Current job</div>
+          <div class="overlay-actions">
+            <div class="connection-beacon" id="connectionBeacon"><span class="dot"></span>Connected</div><button
+              class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
+              title="Refresh printer connection">↻</button>
+          </div>
+        </div>
+        <div class="job-title" id="filename">Waiting for a print…</div>
+        <div class="progress-row"><span class="label" id="machineStatus">Waiting for status</span><strong
+            id="progress">—</strong></div>
+        <div class="track">
+          <div class="fill" id="progressFill"></div>
+        </div>
+        <div class="details"><span id="layer">Layer — / —</span><span id="remaining">Finishes —</span></div>
+      </section>
+      <section class="temperatures" id="temperaturesPanel">
+        <div class="label temperature-label">Temperatures</div>
+        <div class="stat-grid">
+          <div class="stat"><span class="label">Nozzle</span><span class="value" id="nozzle">—</span><span
+              class="target-temperature">Target <span id="nozzleTarget">—</span></span></div>
+          <div class="stat"><span class="label">Bed</span><span class="value" id="bed">—</span><span
+              class="target-temperature">Target <span id="bedTarget">—</span></span></div>
+          <div class="stat chamber-stat"><span class="label">Chamber</span><span class="value" id="chamber">—</span>
+          </div>
+        </div>
+      </section>
+    </section>
+    <div class="status"><span class="dot"></span><span id="connection"><b>Not connected.</b> Open Settings to
+        begin.</span></div>
+    <footer><span class="footer-mark">✦</span><span>Made with love by</span><strong>A.J. Richardson</strong></footer>
+  </main>
+  <dialog id="settingsDialog">
+    <form id="settingsForm">
+      <div class="settings-header">
+        <h2>Settings</h2><button type="button" id="closeButton">🗙</button>
+      </div>
+      <label class="toggle-setting" for="showPrintControls"><span>Show print controls</span><input
+          id="showPrintControls" type="checkbox" role="switch" checked /></label>
+      <label class="toggle-setting" for="showTemperatures"><span>Show temperatures</span><input id="showTemperatures"
+          type="checkbox" role="switch" checked /></label>
+      <label class="toggle-setting" for="showStatsPanel"><span>Show stats panel</span><input id="showStatsPanel"
+          type="checkbox" role="switch" checked /></label>
+      <label class="toggle-setting" for="showLightToggle"><span>Show chamber light button</span><input
+          id="showLightToggle" type="checkbox" role="switch" checked /></label>
+      <h3>Printer connection</h3>
+      <p>Select your printer model and enter its LAN address and ID. Settings, including the CC2 access code, are saved
+        only in this browser.</p>
+      <label for="printerModel">Printer model</label>
+      <select id="printerModel">
+        <option value="cc1">Centauri Carbon (CC1 · SDCP)</option>
+        <option value="cc2">Centauri Carbon 2 (CC2 · MQTT)</option>
+      </select>
+      <label for="printerIp">Printer IP address</label><input id="printerIp" required placeholder="192.168.1.50"
+        pattern="[A-Za-z0-9.:-]+" />
+      <label for="serialNumber" id="serialLabel">Serial Number</label><input id="serialNumber" required
+        pattern="[^/+#\s]+" placeholder="000000000001d354" />
+      <div id="cc2Settings" hidden>
+        <label for="accessCode">LAN access code</label><input id="accessCode" type="password" autocomplete="off"
+          disabled />
+        <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
+          connects to MQTT on WebSocket port 9001.</p>
+      </div>
+      <label for="cameraUrl">Camera URL (optional override)</label><input id="cameraUrl"
+        placeholder="http://192.168.1.50:3031/video" />
+      <div class="actions"><button class="primary" type="submit">Save</button></div>
+    </form>
+  </dialog>
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="cc2.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+
+</html>
