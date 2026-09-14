@@ -52,7 +52,7 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 - Select **Fullscreen** for a larger camera view. Select **Exit fullscreen** or press `Esc` to leave it.
 - Select the refresh arrow beside the connection indicator to reconnect manually.
 - Select the circular bulb button in the camera's top-right corner to toggle the chamber light. Use **Show chamber light button** in Settings to hide or show it independently of the stats panel.
-- Open **Settings** to change the model, address, printer ID, CC2 access code, or camera URL. When switching printers, enter the matching ID and clear or update any custom camera URL.
+- Open **Settings** to configure each printer and select **Save** for each model. CC1 and CC2 retain separate addresses, IDs, access codes, and camera URLs. Once both are configured, use the **CC1 / CC2** buttons in the dashboard header (also available in fullscreen) to switch the camera, status, and controls. The selected printer is remembered on reload; only the selected printer is connected at a time. The LAN access code is visible as you type.
 - When there is no active print, the job panel shows a waiting message while temperature readings can still update.
 
 ## Connection details and storage

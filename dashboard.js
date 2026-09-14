@@ -178,6 +178,7 @@ function connect() {
   let connectionError = '';
   $('camera').removeAttribute('src'); $('camera').hidden = true; $('cameraEmpty').hidden = false;
   updateStatus({ Status: { CurrentStatus: 0 } });
+  updateLightState(false);
   try { active = socket = cc2 ? new CC2Connection(saved) : new WebSocket(`ws://${saved.printerIp}:3030/websocket`); } catch { return setConnection('Invalid connection settings or missing protocol library.'); }
   setConnection('Connecting to printer…');
   active.onopen = () => {
@@ -225,6 +226,33 @@ function connect() {
     reconnectTimer = setTimeout(connect, wait);
   };
 }
+const collapsedPanels = { stats: false, controls: false };
+function updateFullscreenPanels() {
+  const shell = document.querySelector('.shell');
+  const fullscreen = document.fullscreenElement === shell;
+  shell.classList.toggle('fullscreen-controls-collapsed', fullscreen && collapsedPanels.controls);
+  for (const [name, panelId, setting] of [
+    ['stats', 'overlay', 'showStatsPanel'],
+    ['controls', 'printControlPanel', 'showPrintControls']
+  ]) {
+    const collapsed = fullscreen && collapsedPanels[name];
+    const panel = $(panelId), button = $(`${name}PanelToggle`);
+    panel.classList.toggle('fullscreen-collapsed', collapsed);
+    $(`${name}PanelContent`).inert = collapsed;
+    button.hidden = !fullscreen || saved[setting] === false;
+    button.setAttribute('aria-expanded', String(!collapsed));
+    const label = `${collapsed ? 'Show' : 'Hide'} ${name} panel`;
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.textContent = (name === 'stats') !== collapsed ? '‹' : '›';
+  }
+}
+for (const name of ['stats', 'controls']) {
+  $(`${name}PanelToggle`).onclick = () => {
+    collapsedPanels[name] = !collapsedPanels[name];
+    updateFullscreenPanels();
+  };
+}
 function applyControlVisibility() {
   const visible = saved.showPrintControls !== false;
   $('printControlPanel').hidden = !visible;
@@ -238,6 +266,7 @@ function applyControlVisibility() {
   $('showStatsPanel').checked = saved.showStatsPanel !== false;
   $('lightToggle').hidden = saved.showLightToggle === false;
   $('showLightToggle').checked = saved.showLightToggle !== false;
+  updateFullscreenPanels();
 }
 for (const setting of ['showPrintControls', 'showTemperatures', 'showStatsPanel', 'showLightToggle']) {
   $(setting).onchange = () => {
@@ -283,6 +312,7 @@ document.addEventListener('fullscreenchange', () => {
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
   if (fullscreen) $('fullscreenButton').after($('lightToggle'));
   else $('camera').after($('lightToggle'));
+  updateFullscreenPanels();
 });
 $('closeButton').onclick = () => $('settingsDialog').close();
 // Chrome's own validation bubble is easy to miss inside a modal dialog, and a blocked

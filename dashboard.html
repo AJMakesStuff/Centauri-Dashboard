@@ -15,7 +15,13 @@
         <h1>Centauri Carbon</h1>
         <p class="sub">Local printer dashboard</p>
       </div>
-      <div class="button-group"><button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button></div>
+      <div class="button-group">
+        <div id="printerSwitch" class="printer-switch" role="group" aria-label="Active printer" hidden>
+          <button id="switchCC1" type="button" aria-pressed="false">CC1</button>
+          <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
+        </div>
+        <button id="fullscreenButton">⛶</button><button id="settingsButton">⚙</button>
+      </div>
     </header>
     <section class="camera" aria-label="Printer camera">
       <div class="empty" id="cameraEmpty">Connect your printer to start the live camera feed.</div>
@@ -24,18 +30,25 @@
         title="Toggle chamber light" disabled>💡</button>
       <div class="live" id="liveBadge"><span class="dot"></span><span id="liveText">OFFLINE</span></div>
       <div class="print-control-panel" id="printControlPanel">
+        <button id="controlsPanelToggle" class="panel-toggle controls-panel-toggle" type="button"
+          aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel" title="Hide controls panel" hidden>›</button>
+        <div id="controlsPanelContent">
         <div class="print-controls" role="group" aria-label="Print controls">
-          <button id="stopPrint" class="stop-print" type="button" title="Stop the current print" disabled><span
-              aria-hidden="true">■</span> Stop</button>
-          <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print" disabled><span
-              aria-hidden="true">▶</span> Play</button>
-          <button id="pausePrint" type="button" title="Pause the current print" disabled><span
-              aria-hidden="true">Ⅱ</span> Pause</button>
+          <button id="stopPrint" class="stop-print" type="button" title="Stop the current print" aria-label="Stop the current print" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" /></svg></button>
+          <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print" aria-label="Resume the paused print" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2 L14 8 L4 14 Z" /></svg></button>
+          <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" /></svg></button>
         </div>
         <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
+        </div>
       </div>
     </section>
     <section class="overlay" id="overlay">
+      <button id="statsPanelToggle" class="panel-toggle stats-panel-toggle" type="button"
+        aria-controls="statsPanelContent" aria-expanded="true" aria-label="Hide stats panel" title="Hide stats panel" hidden>‹</button>
+      <div id="statsPanelContent">
       <section class="job-details">
         <div class="overlay-heading">
           <div class="label">Current job</div>
@@ -64,6 +77,7 @@
           </div>
         </div>
       </section>
+      </div>
     </section>
     <div class="status"><span class="dot"></span><span id="connection"><b>Not connected.</b> Open Settings to
         begin.</span></div>
@@ -101,7 +115,7 @@
       <p id="serialHint">Optional on the Centauri Carbon. Leave it blank and the dashboard reads the ID from the printer
         once it connects.</p>
       <div id="cc2Settings" hidden>
-        <label for="accessCode">LAN access code</label><input id="accessCode" type="password" autocomplete="off"
+        <label for="accessCode">LAN access code</label><input id="accessCode" type="text" autocomplete="off" spellcheck="false" autocapitalize="none"
           disabled />
         <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
           connects to MQTT on WebSocket port 9001.</p>

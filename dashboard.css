@@ -398,9 +398,19 @@ button.primary {
 }
 
 .print-control-panel .print-controls button {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 34px;
     justify-content: center;
     padding: 8px;
+}
+
+.print-controls svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: currentColor;
 }
 
 .print-control-panel[hidden] {
@@ -754,4 +764,141 @@ select {
         max-height: calc(100vh - 230px);
         overflow: auto;
     }
+}
+
+.printer-switch {
+    display: flex;
+    gap: 4px;
+}
+
+.printer-switch[hidden] {
+    display: none;
+}
+
+.printer-switch button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+}
+
+.printer-switch button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width:540px) {
+    header {
+        flex-wrap: wrap;
+    }
+}
+
+.panel-toggle {
+    display: none;
+}
+
+#statsPanelContent {
+    display: contents;
+}
+
+.shell:fullscreen .panel-toggle:not([hidden]) {
+    position: absolute;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    top: 0;
+    bottom: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-size: 0;
+    line-height: 1;
+}
+
+.panel-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+}
+
+.stats-panel-toggle { right: 0; }
+.controls-panel-toggle { left: 0; }
+
+.panel-toggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    margin-left: -4px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: translateX(-2px) rotate(45deg);
+}
+
+.stats-panel-toggle[aria-expanded="true"]::before,
+.controls-panel-toggle[aria-expanded="false"]::before {
+    transform: translateX(2px) rotate(-135deg);
+}
+
+.shell:fullscreen .overlay,
+.shell:fullscreen .print-control-panel {
+    overflow: hidden;
+    transition: transform .36s cubic-bezier(.22, 1, .36, 1);
+}
+
+.shell:fullscreen .overlay { padding-right: 52px; }
+.shell:fullscreen .print-control-panel {
+    padding-left: 42px;
+    width: 294px;
+}
+
+.shell:fullscreen #statsPanelContent {
+    display: block;
+    max-height: inherit;
+    overflow: auto;
+}
+
+.shell:fullscreen .overlay.fullscreen-collapsed {
+    transform: translateX(calc(-100% - 16px + 35px));
+}
+
+.shell:fullscreen .print-control-panel.fullscreen-collapsed {
+    transform: translateX(calc(100% + 18px - 35px));
+}
+
+.shell:fullscreen .live {
+    transition: bottom .36s cubic-bezier(.22, 1, .36, 1), right .36s cubic-bezier(.22, 1, .36, 1);
+}
+
+.shell:fullscreen.fullscreen-controls-collapsed .live {
+    bottom: 18px;
+    right: 44px;
+}
+
+.shell:fullscreen .overlay.fullscreen-collapsed,
+.shell:fullscreen .print-control-panel.fullscreen-collapsed {
+    background: #07101840;
+    border-color: #ffffff18;
+    box-shadow: none;
+}
+
+@media (max-width:760px) {
+    .shell:fullscreen #statsPanelContent { max-height: calc(100vh - 268px); }
+}
+
+@media (max-width:720px) {
+    .shell:fullscreen .overlay.fullscreen-collapsed {
+        transform: translateX(calc(-100% - 10px + 35px));
+    }
+}
+
+@media (prefers-reduced-motion:reduce) {
+    .shell:fullscreen .overlay,
+    .shell:fullscreen .print-control-panel {
+        transition: none;
+    }
+    .shell:fullscreen .live { transition: none; }
 }

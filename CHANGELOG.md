@@ -2,7 +2,31 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.3 (Current)
+## 0.1.5 (Current)
+
+### Added
+
+- Added panel collapse toggles whilst in fullscreen
+
+### Changed
+
+- Changed print control icons
+
+## 0.1.4
+
+### Added
+
+- Added ability to toggle between CC1 and CC2 if both printers are linked
+
+### Fixed
+
+- LAN only access code not visible while typing
+
+### Changed
+
+- Converted print controls to icon only
+
+## 0.1.3
 
 ### Fixed
 
