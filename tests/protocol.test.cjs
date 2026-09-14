@@ -10,6 +10,7 @@ function setup(settings = {}, secureContext = true) {
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
       value: '', style: {}, classList: { toggle() { } },
+      appendChild(child) { child.parentElement = this; },
       setAttribute() { }, removeAttribute() { }, after() { }, showModal() { this.open = true; }, close() { this.open = false; }
     });
     return elements.get(id);
@@ -53,6 +54,32 @@ function setup(settings = {}, secureContext = true) {
   return { element, clients, sockets, run, tick, receive, register, timers, stored: () => settings };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
+test('fullscreen panels collapse independently and restore interaction outside fullscreen', () => {
+  const t = setup(cc2);
+  assert.equal(t.element('statsPanelToggle').hidden, true);
+  t.run("document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
+  assert.equal(t.element('statsPanelToggle').hidden, false);
+  t.element('statsPanelToggle').onclick();
+  assert.equal(t.element('statsPanelContent').inert, true);
+  assert.equal(t.element('controlsPanelContent').inert, false);
+  assert.equal(t.element('statsPanelToggle').title, 'Show stats panel');
+  t.element('controlsPanelToggle').onclick();
+  assert.equal(t.element('controlsPanelContent').inert, true);
+  t.element('statsPanelToggle').onclick();
+  assert.equal(t.element('statsPanelContent').inert, false);
+  t.run('document.fullscreenElement = null; updateFullscreenPanels()');
+  assert.equal(t.element('controlsPanelContent').inert, false);
+  assert.equal(t.element('controlsPanelToggle').hidden, true);
+});
+
+test('fullscreen arrows respect panels disabled in Settings', () => {
+  const t = setup({ ...cc2, showStatsPanel: false, showPrintControls: false });
+  t.run("document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
+  assert.equal(t.element('statsPanelToggle').hidden, true);
+  assert.equal(t.element('controlsPanelToggle').hidden, true);
+  assert.equal(t.element('overlay').hidden, true);
+  assert.equal(t.element('printControlPanel').hidden, true);
+});
 test('saving a second printer preserves the first and enables persistent quick switching', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board', cameraUrl: 'http://cc1/camera' });
   assert.equal(t.element('printerSwitch').hidden, true);

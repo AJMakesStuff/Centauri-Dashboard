@@ -2,7 +2,17 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.4 (Current)
+## 0.1.5 (Current)
+
+### Added
+
+- Added panel collapse toggles whilst in fullscreen
+
+### Changed
+
+- Changed print control icons
+
+## 0.1.4
 
 ### Added
 
