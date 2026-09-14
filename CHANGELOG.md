@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.1.7 (Current)
+## 0.1.8 (Current)
+
+## Fixes
+
+- CC1 Serial Number auto-discovery not functioning periodically
+
+## 0.1.7
 
 - Implemented EricReiche's nginx Docker Compose setup https://github.com/AJMakesStuff/Centauri-Dashboard/pull/1#issue-5446903916
 

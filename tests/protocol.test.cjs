@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const { EventEmitter } = require('node:events');
 
-function setup(settings = {}, secureContext = true) {
+function setup(settings = {}, secureContext = true, fetch) {
   const elements = new Map(), clients = [], sockets = [], timers = new Map(), stored = new Map();
   let timerId = 0, time = 100000;
   const element = id => {
@@ -22,7 +22,7 @@ function setup(settings = {}, secureContext = true) {
     close() { this.readyState = 3; }
   }
   const context = vm.createContext({
-    console, crypto: secureContext ? require('node:crypto').webcrypto : {
+    console, fetch, crypto: secureContext ? require('node:crypto').webcrypto : {
       getRandomValues: array => require('node:crypto').webcrypto.getRandomValues(array)
     }, WebSocket: Socket,
     Date: class extends Date { static now() { return time; } },
@@ -382,4 +382,39 @@ test('a half-typed printer address is not probed', () => {
   [...t.timers.values()].find(timer => timer.ms === 700).fn();
   assert.equal(t.sockets.length, 0);
   assert.equal(Boolean(t.element('serialSpinner').hidden), true);
+});
+
+const settleDiscovery = () => new Promise(resolve => setImmediate(resolve));
+test('Docker discovery starts a session without waiting for a printer push', async () => {
+  const requests = [];
+  const t = setup({ printerIp: '192.168.1.2' }, false, async url => {
+    requests.push(url);
+    return { ok: true, json: async () => ({ serialNumber: '000000000001d354' }) };
+  });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  await settleDiscovery();
+  assert.deepEqual(requests, ['/api/discover?ip=192.168.1.2']);
+  assert.equal(t.stored().serialNumber, '000000000001d354');
+  assert.deepEqual(socket.sent.map(value => JSON.parse(value).Data.Cmd), [0, 1, 386]);
+});
+
+test('Docker form discovery ignores replies after editing the address', async () => {
+  let reply;
+  const t = setup({}, true, () => new Promise(resolve => { reply = resolve; }));
+  t.element('printerIp').value = '192.168.1.2';
+  t.run("probeSerial('192.168.1.2')");
+  t.element('printerIp').value = '192.168.1.3';
+  t.element('printerIp').events.input();
+  reply({ ok: true, json: async () => ({ serialNumber: '000000000001d354' }) });
+  await settleDiscovery();
+  assert.equal(t.element('serialNumber').value, '');
+});
+
+test('missing Docker endpoint leaves WebSocket discovery available', async () => {
+  const t = setup({ printerIp: '192.168.1.2' }, true, async () => ({ ok: false }));
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  await settleDiscovery();
+  assert.equal(socket.sent.length, 0);
+  socket.onmessage({ data: JSON.stringify({ MainboardID: '000000000001d354' }) });
+  assert.equal(t.stored().serialNumber, '000000000001d354');
 });

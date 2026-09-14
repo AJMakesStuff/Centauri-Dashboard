@@ -1,6 +1,8 @@
 services:
   dashboard:
     image: nginx:alpine
+    depends_on:
+      - discovery
     # Static files only — nothing is built inside the container.
     ports:
       # Host port 8080 on purpose: 80 is often already taken (XAMPP, another
@@ -10,4 +12,10 @@ services:
       # The dashboard is plain HTML/CSS/JS, so nginx serves this folder as-is.
       - ./:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+  discovery:
+    image: python:3.13-alpine
+    command: ["python", "/app/discovery.py"]
+    volumes:
+      - ./discovery.py:/app/discovery.py:ro
     restart: unless-stopped

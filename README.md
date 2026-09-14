@@ -42,7 +42,7 @@ CC1 print controls use commands 129 (pause), 130 (stop), and 131 (resume), as do
 - In **Settings**, enter:
    - Printer model: **Centauri Carbon (CC1)** or **Centauri Carbon 2 (CC2)**. Existing settings default to CC1.
    - Printer IP address: The printer's LAN address, such as `192.168.1.50`, without a URL scheme or port. On CC1, editing this field starts looking for the printer's ID right away; the spinner in the Serial Number field shows it working, and the ID appears there before you save.
-   - Serial Number: For CC1, leave this **blank** and the dashboard reads the printer's ID from the connection and saves it. Enter it manually (the printer shows it in its interface, or use SDCP discovery) if you prefer. The printer only announces the ID while it is idle or printing, so a paused or stopped printer needs the manual value. For CC2, the SN is required: it forms part of the MQTT topic.
+   - Serial Number: For CC1, leave this **blank** and the dashboard reads the printer's ID from the connection and saves it. Enter it manually (the printer shows it in its interface, or use SDCP discovery) if you prefer. Docker also requests the ID directly over UDP. With static hosting, discovery depends on WebSocket announcements while the printer is idle or printing; enter the ID manually if none arrives. For CC2, the SN is required: it forms part of the MQTT topic.
    - LAN access code (CC2 only): The code shown on the printer touchscreen.
    - Camera URL: Optional full HTTP camera URL. Leave blank to try the default stream.
 - Select **Save**. The dashboard saves your settings and attempts to load printer status and the camera. On later visits from the same browser and site address, it reconnects using those saved settings. On CC1 with the Serial Number left blank, the dialog stays open with a spinner in that field while the printer's ID is read, then closes on its own once it arrives.
@@ -57,13 +57,14 @@ docker compose up -d
 
 Then open <http://localhost:8080>.
 
-This runs `nginx:alpine` with the project folder mounted read-only. `nginx.conf` serves `dashboard.html` at `/`, disables directory listings, sends `Cache-Control: no-cache` for the application files so a stale page never pairs with a newer `dashboard.js`, and refuses requests for dotfiles such as `.git`.
+This runs `nginx:alpine` with the project folder mounted read-only, plus a small Python discovery service that sends `M99999` to the entered printer address on UDP port 3000. No Python packages need installing. `nginx.conf` serves `dashboard.html` at `/`, disables directory listings, sends `Cache-Control: no-cache` for the application files so a stale page never pairs with a newer `dashboard.js`, and refuses requests for dotfiles such as `.git`.
 
 Notes:
 
 - The host port is **8080**, not 80, to avoid colliding with anything already listening on port 80 (XAMPP, for example). Change the left side of `"8080:80"` in `docker-compose.yml` for a different port.
 - Keep it on plain HTTP. The printer endpoints are `ws://` and `http://`, so an HTTPS origin causes mixed-content failures.
-- The container does not need to reach the printer. The browser connects to the printer directly; the container only serves files.
+- The discovery container must be able to reach the printer on UDP port 3000. It uses unicast, so Docker host networking is not required. The browser still connects directly for status, controls, and video. If UDP discovery is unavailable, WebSocket discovery remains the fallback.
+- After updating these files, run `docker compose up -d --force-recreate` and reload the dashboard to enable the discovery service.
 - Stop it with `docker compose down`.
 - On an SELinux host (Fedora, RHEL), append `:z` to both volume mounts.
 

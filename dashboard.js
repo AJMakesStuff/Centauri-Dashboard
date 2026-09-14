@@ -141,6 +141,15 @@ function mainboardIdFrom(raw) {
   const candidate = raw?.Data?.MainboardID ?? raw?.MainboardID ?? topic;
   return typeof candidate === 'string' && /^[0-9a-f]{8,64}$/i.test(candidate) ? candidate : undefined;
 }
+function discoverViaServer(ip, receive) {
+  if (typeof fetch !== 'function') return;
+  fetch(`/api/discover?ip=${encodeURIComponent(ip)}`, { cache: 'no-store' })
+    .then(response => response.ok ? response.json() : null)
+    .then(data => {
+      const serial = mainboardIdFrom({ MainboardID: data?.serialNumber });
+      if (serial) receive(serial);
+    }).catch(() => { });
+}
 let serialProbe, serialProbeDebounce, serialProbeTimeout;
 function cancelSerialProbe(pending = false) {
   clearTimeout(serialProbeDebounce); clearTimeout(serialProbeTimeout);
@@ -160,13 +169,18 @@ function probeSerial(ip) {
   serialProbe = probe;
   const finish = () => { if (serialProbe === probe) cancelSerialProbe(true); };
   serialProbeTimeout = setTimeout(finish, SERIAL_DISCOVERY_TIMEOUT);
+  const receive = serialNumber => {
+    if (serialProbe !== probe) return;
+    $('serialNumber').value = serialNumber; $('settingsNotice').hidden = true;
+    finish();
+  };
+  discoverViaServer(ip, receive);
   probe.onmessage = event => {
     if (event.data === 'pong') return;
     let data; try { data = JSON.parse(event.data); } catch { return; }
     const serialNumber = mainboardIdFrom(data);
     if (!serialNumber) return;
-    $('serialNumber').value = serialNumber; $('settingsNotice').hidden = true;
-    finish();
+    receive(serialNumber);
   };
   probe.onerror = finish; probe.onclose = finish;
 }
@@ -227,6 +241,11 @@ function connect() {
         stopConnection();
         openSettings('No printer ID arrived. The printer only announces itself while it is idle or printing — check that it is powered on, or enter the Serial Number from its interface.');
       }, SERIAL_DISCOVERY_TIMEOUT);
+      discoverViaServer(saved.printerIp, serialNumber => {
+        if (version === connectionVersion && active.readyState === WebSocket.OPEN) {
+          active.onmessage({ data: JSON.stringify({ MainboardID: serialNumber }) });
+        }
+      });
       return;
     }
     startSession(active, cc2);
