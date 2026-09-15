@@ -43,7 +43,7 @@
           <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print" disabled>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" /></svg></button>
         </div>
-        <details class="device-panel">
+        <details class="device-panel" id="devicePanel">
           <summary>Fans &amp; temperature</summary>
           <div id="deviceControlRows"></div>
           <p class="device-hint">Set a target or choose Off. Fan speeds use percent.</p>
@@ -87,6 +87,9 @@
       </section>
       </div>
     </section>
+    <div id="fullscreenDock" class="fullscreen-dock" hidden>
+      <section id="fullscreenTemperatures" aria-label="Temperature and fan controls"></section>
+    </div>
     <div class="status"><span class="dot"></span><span id="connection"><b>Not connected.</b> Open Settings to
         begin.</span></div>
     <footer><span class="footer-mark">✦</span><span>Made with love by</span><strong>A.J. Richardson</strong></footer>
@@ -97,14 +100,12 @@
         <h2>Settings</h2><button type="button" id="closeButton">🗙</button>
       </div>
       <p id="settingsNotice" class="settings-notice" hidden></p>
-      <label class="toggle-setting" for="showPrintControls"><span>Show print controls</span><input
-          id="showPrintControls" type="checkbox" role="switch" checked /></label>
-      <label class="toggle-setting" for="showTemperatures"><span>Show temperatures</span><input id="showTemperatures"
-          type="checkbox" role="switch" checked /></label>
-      <label class="toggle-setting" for="showStatsPanel"><span>Show stats panel</span><input id="showStatsPanel"
-          type="checkbox" role="switch" checked /></label>
-      <label class="toggle-setting" for="showLightToggle"><span>Show chamber light button</span><input
-          id="showLightToggle" type="checkbox" role="switch" checked /></label>
+      <label class="toggle-setting" for="redesignedFullscreen"><span>Use redesigned desktop fullscreen</span><input
+          id="redesignedFullscreen" type="checkbox" role="switch" checked /></label>
+      <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a print</span><input
+          id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
+      <label class="toggle-setting" for="lockFansDuringPrint"><span>Lock fans during a print</span><input
+          id="lockFansDuringPrint" type="checkbox" role="switch" /></label>
       <h3>Printer connection</h3>
       <p>Select your printer model and enter its LAN address. The Centauri Carbon's ID is detected automatically; the
         CC2 needs its serial number and access code. Settings are saved only in this browser.</p>

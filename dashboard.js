@@ -97,17 +97,24 @@ const deviceControls = {
   auxFan: { label: 'Auxiliary fan', max: 100, fan: 'AuxiliaryFan' },
   boxFan: { label: 'Chamber fan', max: 100, fan: 'BoxFan' }
 };
-let pendingDevice;
+let pendingDevice, devicePrintActive = false;
+function deviceControlLocked(control) {
+  return Boolean(devicePrintActive && (control.fan ? saved.lockFansDuringPrint : saved.lockTemperaturesDuringPrint));
+}
 function updateDeviceControls() {
   const ready = controlsConnected && socket?.readyState === WebSocket.OPEN && !pendingDevice;
   for (const key of Object.keys(deviceControls)) {
-    for (const suffix of ['Setting', 'Apply', 'Off']) $(key + suffix).disabled = !ready;
+    const locked = deviceControlLocked(deviceControls[key]);
+    for (const suffix of ['Setting', 'Apply', 'Off']) {
+      $(key + suffix).disabled = !ready || locked;
+      $(key + suffix).title = locked ? (deviceControls[key].fan ? 'Fan' : 'Temperature') + ' controls are locked during a print. Change this in Settings.' : '';
+    }
   }
 }
 function setDeviceControl(key, value) {
   if (!controlsConnected || socket?.readyState !== WebSocket.OPEN || pendingDevice) return;
   const control = deviceControls[key];
-  if (!control) return;
+  if (!control || deviceControlLocked(control)) return;
   if (String(value).trim() === '' || !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > control.max) {
     show('deviceControlStatus', 'Enter a whole number from 0 to ' + control.max + ' for ' + control.label.toLowerCase() + '.');
     return;
@@ -143,8 +150,10 @@ function handleDeviceResponse(raw) {
 for (const [key, control] of Object.entries(deviceControls)) {
   const form = document.createElement('form');
   form.className = 'device-control-row';
+  form.className += control.fan ? ' fan-control-row' : ' heater-control-row';
   const unit = control.fan ? '%' : '°C';
   form.innerHTML = '<label for="' + key + 'Setting">' + control.label + ' <span id="' + key + 'Reported">—</span></label><div class="device-control-inputs"><input id="' + key + 'Setting" type="number" min="0" max="' + control.max + '" step="1" placeholder="0–' + control.max + '" aria-label="' + control.label + ' target (' + unit + ')" required disabled /><span>' + unit + '</span><button id="' + key + 'Apply" type="submit" disabled>Set</button><button id="' + key + 'Off" type="button" disabled>Off</button></div>';
+  if (!control.fan) form.innerHTML = '<div class="temperature-gauge" aria-hidden="true"><svg viewBox="0 0 120 100"><path class="gauge-track" d="M22 82 A48 48 0 1 1 98 82" pathLength="100"/><path id="' + key + 'GaugeArc" class="gauge-arc" d="M22 82 A48 48 0 1 1 98 82" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><span id="' + key + 'GaugeValue" class="gauge-value">—</span><span class="gauge-name">' + control.label + '</span></div>' + form.innerHTML;
   $('deviceControlRows').append(form);
   form.onsubmit = event => { event.preventDefault(); setDeviceControl(key, $(key + 'Setting').value); };
   $(key + 'Off').onclick = () => setDeviceControl(key, 0);
@@ -157,6 +166,7 @@ function updatePrintControls() {
 }
 function resetPrintControls(connected) {
   controlsConnected = connected;
+  devicePrintActive = false;
   clearTimeout(pendingDevice?.timer);
   pendingDevice = undefined;
   updateDeviceControls();
@@ -164,6 +174,10 @@ function resetPrintControls(connected) {
   for (const key of Object.keys(deviceControls)) {
     $(key + 'Setting').value = '';
     show(key + 'Reported', '—');
+    if (!deviceControls[key].fan) {
+      show(key + 'GaugeValue', '—');
+      $(key + 'GaugeArc').setAttribute('stroke-dashoffset', '100');
+    }
   }
   printStatus = null;
   activePrint = false;
@@ -230,8 +244,15 @@ function send(cmd, data, target = socket) { if (target?.readyState === WebSocket
 function normalizeUrl(url) { return /^https?:\/\//.test(url) ? url : `http://${url}`; }
 function startCamera(url) { if (!url) return; const img = $('camera'); img.src = normalizeUrl(url); img.hidden = false; $('cameraEmpty').hidden = true; }
 function updateStatus(raw) {
-  const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value));
-  if (!s || typeof s !== 'object' || !('PrintInfo' in s || 'CurrentStatus' in s || 'TempOfNozzle' in s)) return;
+  const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value || 'TempOfHotbed' in value || 'CurrentFanSpeed' in value));
+  if (!s) return;
+  for (const [key, field] of [['nozzle', 'TempOfNozzle'], ['bed', 'TempOfHotbed']]) {
+    const value = s[field];
+    if (value != null && Number.isFinite(Number(value))) {
+      show(key + 'GaugeValue', degrees(value));
+      $(key + 'GaugeArc').setAttribute('stroke-dashoffset', String(100 - Math.max(0, Math.min(100, Number(value) / deviceControls[key].max * 100))));
+    }
+  }
   for (const [key, control] of Object.entries(deviceControls)) {
     const value = control.fan ? s.CurrentFanSpeed?.[control.fan] : s[control.field];
     if (value != null && Number.isFinite(Number(value))) show(key + 'Reported', (control.fan ? 'Current ' : 'Target ') + Math.round(Number(value)) + (control.fan ? '%' : '°C'));
@@ -245,7 +266,18 @@ function updateStatus(raw) {
   if (s.PrintInfo || 'CurrentStatus' in s) {
     printStatus = printCode;
     activePrint = hasActiveJob;
+    devicePrintActive = printInProgress;
+    updateDeviceControls();
     updatePrintControls();
+  }
+  if (devicePrintActive) {
+    for (const [key, control] of Object.entries(deviceControls)) {
+      const input = $(key + 'Setting');
+      const value = control.fan ? s.CurrentFanSpeed?.[control.fan] : s[key === 'nozzle' ? 'TempOfNozzle' : 'TempOfHotbed'];
+      if (value != null && Number.isFinite(Number(value)) && (input.disabled || document.activeElement !== input)) {
+        input.value = String(Math.round(Number(value)));
+      }
+    }
   }
   const reportedProgress = info.Progress == null ? NaN : Number(info.Progress);
   const percent = hasActiveJob && Number.isFinite(reportedProgress) ? Math.max(0, Math.min(100, Math.round(reportedProgress))) : hasActiveJob && total > 0 ? Math.min(100, Math.round(current / total * 100)) : null;
@@ -420,6 +452,8 @@ function connect() {
   };
 }
 const collapsedPanels = { stats: false, controls: false };
+const mobileFullscreenQuery = typeof matchMedia === 'function'
+  ? matchMedia('(max-width: 720px), (max-width: 960px) and (max-height: 600px)') : null;
 if (typeof ResizeObserver !== 'undefined') {
   new ResizeObserver(() => {
     document.querySelector('.shell').style.setProperty(
@@ -429,16 +463,17 @@ if (typeof ResizeObserver !== 'undefined') {
 function updateFullscreenPanels() {
   const shell = document.querySelector('.shell');
   const fullscreen = !bothView && document.fullscreenElement === shell;
-  shell.classList.toggle('fullscreen-controls-collapsed', fullscreen && collapsedPanels.controls);
-  for (const [name, panelId, setting] of [
-    ['stats', 'overlay', 'showStatsPanel'],
-    ['controls', 'printControlPanel', 'showPrintControls']
+  const collapsible = fullscreen && (Boolean(mobileFullscreenQuery?.matches) || saved.redesignedFullscreen === false);
+  shell.classList.toggle('fullscreen-controls-collapsed', collapsible && collapsedPanels.controls);
+  for (const [name, panelId] of [
+    ['stats', 'overlay'],
+    ['controls', 'printControlPanel']
   ]) {
-    const collapsed = fullscreen && collapsedPanels[name];
+    const collapsed = collapsible && collapsedPanels[name];
     const panel = $(panelId), button = $(`${name}PanelToggle`);
     panel.classList.toggle('fullscreen-collapsed', collapsed);
     $(`${name}PanelContent`).inert = collapsed;
-    button.hidden = !fullscreen || saved[setting] === false;
+    button.hidden = !collapsible;
     button.setAttribute('aria-expanded', String(!collapsed));
     const label = `${collapsed ? 'Show' : 'Hide'} ${name} panel`;
     button.setAttribute('aria-label', label);
@@ -452,29 +487,22 @@ for (const name of ['stats', 'controls']) {
     updateFullscreenPanels();
   };
 }
-function applyControlVisibility() {
-  const visible = saved.showPrintControls !== false;
-  $('printControlPanel').hidden = !visible;
-  $('showPrintControls').checked = visible;
-  document.querySelector('.shell').classList.toggle('controls-hidden', !visible);
-  const temperaturesVisible = saved.showTemperatures !== false;
-  $('temperaturesPanel').hidden = !temperaturesVisible;
-  $('showTemperatures').checked = temperaturesVisible;
-  $('overlay').classList.toggle('temperatures-hidden', !temperaturesVisible);
-  $('overlay').hidden = saved.showStatsPanel === false;
-  $('showStatsPanel').checked = saved.showStatsPanel !== false;
-  $('lightToggle').hidden = saved.showLightToggle === false;
-  $('showLightToggle').checked = saved.showLightToggle !== false;
+updateFullscreenPanels();
+$('redesignedFullscreen').checked = saved.redesignedFullscreen !== false;
+$('redesignedFullscreen').onchange = () => {
+  saved.redesignedFullscreen = $('redesignedFullscreen').checked;
+  persistSettings('redesignedFullscreen');
+  layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
   updateFullscreenPanels();
-}
-for (const setting of ['showPrintControls', 'showTemperatures', 'showStatsPanel', 'showLightToggle']) {
+};
+for (const setting of ['lockTemperaturesDuringPrint', 'lockFansDuringPrint']) {
+  $(setting).checked = saved[setting] === true;
   $(setting).onchange = () => {
     saved[setting] = $(setting).checked;
     persistSettings(setting);
-    applyControlVisibility();
+    updateDeviceControls();
   };
 }
-applyControlVisibility();
 function updateModelSettings() {
   const cc2 = $('printerModel').value === 'cc2';
   $('cc2Settings').hidden = !cc2;
@@ -523,10 +551,35 @@ $('fullscreenButton').onclick = async () => {
 document.addEventListener('fullscreenchange', () => {
   const fullscreen = document.fullscreenElement === document.querySelector('.shell');
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
-  if (fullscreen && !bothView) $('fullscreenButton').after($('lightToggle'));
+  if (fullscreen && !bothView) $('fullscreenButton').before($('lightToggle'));
   else $('camera').after($('lightToggle'));
+  layoutFullscreenDock(fullscreen && !bothView);
   updateFullscreenPanels();
 });
+mobileFullscreenQuery?.addEventListener('change', () => {
+  layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
+  updateFullscreenPanels();
+});
+let devicePanelWasOpen = false, fullscreenDockActive = false;
+function layoutFullscreenDock(fullscreen) {
+  const dock = $('fullscreenDock');
+  fullscreen = fullscreen && !mobileFullscreenQuery?.matches && saved.redesignedFullscreen !== false;
+  document.querySelector('.shell').classList.toggle('desktop-fullscreen', fullscreen);
+  if (fullscreen && !fullscreenDockActive) {
+    devicePanelWasOpen = $('devicePanel').open;
+    $('fullscreenTemperatures').append($('devicePanel'));
+    dock.append($('overlay'));
+    dock.append($('printControlPanel'));
+    $('devicePanel').open = true;
+  } else if (!fullscreen && fullscreenDockActive) {
+    document.querySelector('.print-controls').after($('devicePanel'));
+    document.querySelector('.camera').append($('printControlPanel'));
+    document.querySelector('.camera').after($('overlay'));
+    $('devicePanel').open = devicePanelWasOpen;
+  }
+  fullscreenDockActive = fullscreen;
+  dock.hidden = !fullscreen;
+}
 $('settingsDialog').addEventListener('close', () => cancelSerialProbe(true));
 $('serialNumber').addEventListener('input', () => cancelSerialProbe(true));
 $('closeButton').onclick = () => $('settingsDialog').close();

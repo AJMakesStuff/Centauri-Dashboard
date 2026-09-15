@@ -24,7 +24,9 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
     close() { this.readyState = 3; }
   }
   const context = vm.createContext({
-    console, fetch, location: { search }, URLSearchParams, crypto: secureContext ? require('node:crypto').webcrypto : {
+    console, fetch, location: { search }, URLSearchParams,
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    crypto: secureContext ? require('node:crypto').webcrypto : {
       getRandomValues: array => require('node:crypto').webcrypto.getRandomValues(array)
     }, WebSocket: Socket,
     Date: class extends Date { static now() { return time; } },
@@ -56,8 +58,9 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
   return { element, clients, sockets, run, tick, receive, register, timers, stored: () => JSON.parse(stored.get('dashboard') || '{}') };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
-test('fullscreen panels collapse independently and restore interaction outside fullscreen', () => {
+test('mobile fullscreen panels collapse independently and restore interaction outside fullscreen', () => {
   const t = setup(cc2);
+  t.run('mobileFullscreenQuery.matches = true');
   assert.equal(t.element('statsPanelToggle').hidden, true);
   t.run("document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
   assert.equal(t.element('statsPanelToggle').hidden, false);
@@ -74,14 +77,14 @@ test('fullscreen panels collapse independently and restore interaction outside f
   assert.equal(t.element('controlsPanelToggle').hidden, true);
 });
 
-test('fullscreen arrows respect panels disabled in Settings', () => {
-  const t = setup({ ...cc2, showStatsPanel: false, showPrintControls: false });
-  t.run("document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
-  assert.equal(t.element('statsPanelToggle').hidden, true);
-  assert.equal(t.element('controlsPanelToggle').hidden, true);
-  assert.equal(t.element('overlay').hidden, true);
-  assert.equal(t.element('printControlPanel').hidden, true);
+test('removed visibility preferences do not hide panels or mobile collapse controls', () => {
+  const t = setup({ ...cc2 });
+  t.run("mobileFullscreenQuery.matches = true; document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
+  assert.equal(t.element('statsPanelToggle').hidden, false);
+  assert.equal(t.element('controlsPanelToggle').hidden, false);
+  for (const id of ['overlay', 'printControlPanel', 'temperaturesPanel', 'lightToggle']) assert.notEqual(t.element(id).hidden, true);
 });
+
 test('saving a second printer preserves the first and enables persistent quick switching', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board', cameraUrl: 'http://cc1/camera' });
   assert.equal(t.element('printerSwitch').hidden, true);
@@ -473,9 +476,9 @@ test('embedded printers use independent profiles and merge settings without losi
   assert.equal(first.stored().cameraUrl, 'http://second/camera');
   assert.equal(first.stored().printerModel, 'cc2');
   assert.equal(first.stored().viewMode, 'both');
-  first.element('showTemperatures').checked = false;
-  first.element('showTemperatures').onchange();
-  assert.equal(first.stored().showTemperatures, false);
+  first.element('lockTemperaturesDuringPrint').checked = false;
+  first.element('lockTemperaturesDuringPrint').onchange();
+  assert.equal(first.stored().lockTemperaturesDuringPrint, false);
 });
 
 
@@ -557,4 +560,185 @@ test('CC2 maps heater and fan commands independently and reports device status',
   t.receive({ method: 6000, result: { extruder: { target: 210 }, fans: { fan: { speed: 75 } } } });
   assert.equal(t.element('modelFanReported').textContent, 'Current 75%');
   assert.equal(t.element('nozzleReported').textContent, 'Target 210°C');
+});
+
+test('temperature lock follows print lifecycle, persists, and blocks commands without locking fans', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  assert.equal(t.element('lockTemperaturesDuringPrint').checked, false);
+  const status = code => t.run(`updateStatus({Status:{CurrentStatus:1,PrintInfo:{Status:${code}}}})`);
+  status(1);
+  assert.equal(t.element('nozzleSetting').disabled, false);
+  t.element('lockTemperaturesDuringPrint').checked = true;
+  t.element('lockTemperaturesDuringPrint').onchange();
+  assert.equal(t.run("JSON.parse(localStorage.getItem('dashboard')).lockTemperaturesDuringPrint"), true);
+  for (const code of [1, 5, 6, 7, 12]) {
+    status(code);
+    for (const key of ['nozzle', 'bed']) {
+      for (const suffix of ['Setting', 'Apply', 'Off']) assert.equal(t.element(key + suffix).disabled, true);
+    }
+    assert.equal(t.element('modelFanSetting').disabled, false);
+  }
+  const count = socket.sent.length;
+  t.run("setDeviceControl('nozzle', 210)");
+  t.element('bedOff').onclick();
+  assert.equal(socket.sent.length, count);
+  t.run('updateStatus({Status:{TempOfNozzle:210}})');
+  assert.equal(t.element('nozzleSetting').disabled, true);
+  for (const code of [0, 8, 9]) {
+    status(code);
+    assert.equal(t.element('nozzleSetting').disabled, false);
+  }
+  status(1);
+  t.element('lockTemperaturesDuringPrint').checked = false;
+  t.element('lockTemperaturesDuringPrint').onchange();
+  assert.equal(t.element('bedApply').disabled, false);
+  t.run('resetPrintControls(false)');
+  assert.equal(t.element('bedApply').disabled, true);
+});
+
+test('saved temperature lock applies to CC2 print status', () => {
+  const t = setup({ ...cc2, lockTemperaturesDuringPrint: true }); t.register();
+  assert.equal(t.element('lockTemperaturesDuringPrint').checked, true);
+  t.receive({ method: 6000, result: { ...status } });
+  assert.equal(t.element('nozzleSetting').disabled, true);
+  assert.equal(t.element('auxFanApply').disabled, false);
+});
+
+test('printing temperature inputs follow measured readings and preserve idle or focused edits', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  t.run('updateStatus({Status:{CurrentStatus:1,PrintInfo:{Status:1},TempOfNozzle:209.6,TempOfHotbed:59.8,TempTargetNozzle:220}})');
+  assert.equal(t.element('nozzleSetting').value, '210');
+  assert.equal(t.element('bedSetting').value, '60');
+  t.run('updateStatus({Status:{TempOfHotbed:61}})');
+  assert.equal(t.element('bedSetting').value, '61');
+  assert.equal(t.element('nozzleSetting').value, '210');
+  t.element('nozzleSetting').value = '225';
+  t.run("document.activeElement = $('nozzleSetting'); updateStatus({Status:{TempOfNozzle:211}})");
+  assert.equal(t.element('nozzleSetting').value, '225');
+  t.element('lockTemperaturesDuringPrint').checked = true;
+  t.element('lockTemperaturesDuringPrint').onchange();
+  t.run('updateStatus({Status:{PrintInfo:{Status:6},TempOfNozzle:212}})');
+  assert.equal(t.element('nozzleSetting').value, '212');
+  t.run('updateStatus({Status:{PrintInfo:{Status:9},TempOfNozzle:100}})');
+  t.element('nozzleSetting').value = '230';
+  t.run('updateStatus({Status:{TempOfNozzle:90}})');
+  assert.equal(t.element('nozzleSetting').value, '230');
+});
+
+test('fan speeds follow print reports and independent fan lock persists and guards commands', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  assert.equal(t.element('lockFansDuringPrint').checked, false);
+  t.run('updateStatus({Status:{CurrentStatus:1,PrintInfo:{Status:1},CurrentFanSpeed:{ModelFan:75,AuxiliaryFan:50,BoxFan:0}}})');
+  for (const [key, value] of [['modelFan', '75'], ['auxFan', '50'], ['boxFan', '0']]) {
+    assert.equal(t.element(key + 'Setting').value, value);
+    assert.equal(t.element(key + 'Setting').disabled, false);
+  }
+  t.element('modelFanSetting').value = '90';
+  t.run("document.activeElement = $('modelFanSetting'); updateStatus({Status:{CurrentFanSpeed:{ModelFan:80}}})");
+  assert.equal(t.element('modelFanSetting').value, '90');
+  t.element('lockFansDuringPrint').checked = true;
+  t.element('lockFansDuringPrint').onchange();
+  assert.equal(t.run("JSON.parse(localStorage.getItem('dashboard')).lockFansDuringPrint"), true);
+  assert.equal(t.element('nozzleSetting').disabled, false);
+  for (const key of ['modelFan', 'auxFan', 'boxFan']) {
+    for (const suffix of ['Setting', 'Apply', 'Off']) assert.equal(t.element(key + suffix).disabled, true);
+  }
+  const count = socket.sent.length;
+  t.run("setDeviceControl('modelFan', 100)"); t.element('boxFanOff').onclick();
+  assert.equal(socket.sent.length, count);
+  t.run('updateStatus({Status:{PrintInfo:{Status:6},CurrentFanSpeed:{ModelFan:81}}})');
+  assert.equal(t.element('modelFanSetting').value, '81');
+  assert.equal(t.element('modelFanSetting').disabled, true);
+  t.run('updateStatus({Status:{CurrentFanSpeed:{AuxiliaryFan:25}}})');
+  assert.equal(t.element('auxFanSetting').value, '25');
+  assert.equal(t.element('boxFanSetting').value, '0');
+  t.element('lockFansDuringPrint').checked = false; t.element('lockFansDuringPrint').onchange();
+  assert.equal(t.element('modelFanApply').disabled, false);
+  t.element('lockFansDuringPrint').checked = true; t.element('lockFansDuringPrint').onchange();
+  t.run('updateStatus({Status:{PrintInfo:{Status:9},CurrentFanSpeed:{AuxiliaryFan:0}}})');
+  assert.equal(t.element('auxFanSetting').disabled, false);
+  assert.equal(t.element('auxFanSetting').value, '25');
+  t.run('resetPrintControls(false)');
+  assert.equal(t.element('auxFanSetting').disabled, true);
+});
+
+test('saved fan lock applies to CC2 and fan reports update locked inputs', () => {
+  const t = setup({ ...cc2, lockFansDuringPrint: true }); t.register();
+  assert.equal(t.element('lockFansDuringPrint').checked, true);
+  t.receive({ method: 6000, result: { ...status, fans: { fan: { speed: 75 } } } });
+  assert.equal(t.element('modelFanSetting').disabled, true);
+  assert.equal(t.element('modelFanSetting').value, '75');
+  assert.equal(t.element('nozzleSetting').disabled, false);
+});
+
+test('fullscreen gauges follow measured temperatures, retain partial readings, and reset offline', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  t.run('updateStatus({Status:{TempOfNozzle:210,TempOfHotbed:60}})');
+  assert.equal(t.element('nozzleGaugeValue').textContent, '210°');
+  assert.equal(t.element('bedGaugeValue').textContent, '60°');
+  t.run('updateStatus({Status:{TempOfNozzle:211}})');
+  assert.equal(t.element('nozzleGaugeValue').textContent, '211°');
+  assert.equal(t.element('bedGaugeValue').textContent, '60°');
+  t.run('resetPrintControls(false)');
+  assert.equal(t.element('nozzleGaugeValue').textContent, '—');
+  assert.equal(t.element('bedGaugeValue').textContent, '—');
+});
+
+test('mobile fullscreen keeps original panels and restores them when resizing from desktop', () => {
+  const t = setup({});
+  t.element('devicePanel').open = false;
+  t.run('mobileFullscreenQuery.matches = true; layoutFullscreenDock(true)');
+  assert.equal(t.element('fullscreenDock').hidden, true);
+  assert.equal(t.run('fullscreenDockActive'), false);
+  assert.equal(t.element('devicePanel').open, false);
+  t.run('mobileFullscreenQuery.matches = false; layoutFullscreenDock(true)');
+  assert.equal(t.element('fullscreenDock').hidden, false);
+  assert.equal(t.element('devicePanel').open, true);
+  t.run('layoutFullscreenDock(true); mobileFullscreenQuery.matches = true; layoutFullscreenDock(true)');
+  assert.equal(t.element('fullscreenDock').hidden, true);
+  assert.equal(t.element('devicePanel').open, false);
+  assert.equal(t.run('fullscreenDockActive'), false);
+});
+
+test('desktop fullscreen hides collapse arrows and expands previously collapsed mobile panels', () => {
+  const t = setup(cc2);
+  t.run("mobileFullscreenQuery.matches = true; document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
+  t.element('statsPanelToggle').onclick();
+  t.element('controlsPanelToggle').onclick();
+  t.run('mobileFullscreenQuery.matches = false; updateFullscreenPanels()');
+  for (const name of ['stats', 'controls']) {
+    assert.equal(t.element(name + 'PanelToggle').hidden, true);
+    assert.equal(t.element(name + 'PanelContent').inert, false);
+  }
+  t.run('mobileFullscreenQuery.matches = true; updateFullscreenPanels()');
+  assert.equal(t.element('statsPanelToggle').hidden, false);
+  assert.equal(t.element('statsPanelContent').inert, true);
+});
+
+test('fullscreen layout setting switches immediately, persists, and restores original controls', () => {
+  const t = setup(cc2);
+  assert.equal(t.element('redesignedFullscreen').checked, true);
+  t.run("document.fullscreenElement = document.querySelector('.shell'); layoutFullscreenDock(true); updateFullscreenPanels()");
+  assert.equal(t.run('fullscreenDockActive'), true);
+  t.element('redesignedFullscreen').checked = false;
+  t.element('redesignedFullscreen').onchange();
+  assert.equal(t.run('fullscreenDockActive'), false);
+  assert.equal(t.element('fullscreenDock').hidden, true);
+  assert.equal(t.element('statsPanelToggle').hidden, false);
+  assert.equal(t.stored().redesignedFullscreen, false);
+  const restored = setup({ ...cc2, redesignedFullscreen: false });
+  assert.equal(restored.element('redesignedFullscreen').checked, false);
+  restored.run('layoutFullscreenDock(true)');
+  assert.equal(restored.run('fullscreenDockActive'), false);
+  t.element('redesignedFullscreen').checked = true;
+  t.element('redesignedFullscreen').onchange();
+  assert.equal(t.run('fullscreenDockActive'), true);
+  assert.equal(t.element('statsPanelToggle').hidden, true);
+  t.run('mobileFullscreenQuery.matches = true');
+  t.element('redesignedFullscreen').onchange();
+  assert.equal(t.run('fullscreenDockActive'), false);
+  assert.equal(t.element('statsPanelToggle').hidden, false);
 });

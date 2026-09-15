@@ -2,7 +2,23 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.3.0 (Current)
+## 0.4.0 (Current)
+
+### Added
+
+- Redesigned new desktop Fullscreen layout with toggle in settings to switch between current and redesigned layout
+- Added toggle in settings for disabling changes of temperature and fans during a print
+
+### Changed
+
+- Implemented settings button back into Fullscreen mode
+- Placed the chamber light toggle to the left of the Fullscreen buttons
+
+### Removed
+
+- Print control, temp control, and stats control toggles in settings. All panels are now constantly visible.
+
+## 0.3.0
 
 ### Added
 
