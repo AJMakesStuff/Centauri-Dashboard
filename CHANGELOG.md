@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.4.2 (Current)
+## 0.4.3 (Current)
+
+### Removed
+
+- Removed Home functionality due to several bugs
+
+## 0.4.2
 
 ### Added
 

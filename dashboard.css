@@ -385,16 +385,7 @@ button.primary {
     padding: 8px;
 }
 
-.home-printer {
-    width: 100%;
-    margin-top: 8px;
-    padding: 7px 10px;
-}
 
-.home-printer:disabled {
-    opacity: .4;
-    cursor: not-allowed;
-}
 
 .print-controls svg {
     display: block;
