@@ -211,24 +211,7 @@ button.primary {
     gap: 8px;
 }
 
-.connection-beacon {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent);
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    opacity: 0;
-    transition: opacity .2s;
-    text-transform: uppercase;
-}
-
-.overlay.connected .connection-beacon {
-    opacity: 1;
-}
-
-.connection-beacon .dot {
+.live.online .dot {
     background: var(--accent);
     box-shadow: 0 0 0 0 #43d9a3aa;
     animation: connection-pulse 1.5s infinite;
@@ -402,6 +385,9 @@ button.primary {
     padding: 8px;
 }
 
+.home-printer { width: 100%; margin-top: 8px; padding: 7px 10px; }
+.home-printer:disabled { opacity: .4; cursor: not-allowed; }
+
 .print-controls svg {
     display: block;
     width: 16px;
@@ -569,6 +555,8 @@ dialog h3 {
     color: var(--muted);
     font-size: .85rem;
 }
+
+.status[hidden] { display: none; }
 
 .status b {
     color: var(--text);
@@ -1237,7 +1225,7 @@ select {
     .shell:fullscreen .fullscreen-dock .print-control-panel { width: 140px; justify-self: start; }
 }
 .shell.desktop-fullscreen:fullscreen .fullscreen-dock .print-controls { justify-content: center; }
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .overlay { min-width: 0; }
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .overlay { min-width: 0; padding: 8px 12px; }
 @media (max-width: 740px) {
     .shell:fullscreen .fullscreen-dock { grid-template-columns: minmax(0, 1fr) 140px; gap: 12px; }
     .shell:fullscreen .fullscreen-dock #fullscreenTemperatures { grid-column: 1 / -1; width: min(300px, 100%); }

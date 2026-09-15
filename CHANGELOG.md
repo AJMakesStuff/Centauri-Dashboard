@@ -2,7 +2,22 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.4.1 (Current)
+## 0.4.2 (Current)
+
+### Added
+
+- Added Home button to print controls panel
+
+### Changed
+
+- Changed text so that CONNECTED and LIVE are connected
+- Increased padding around redesigned layout progress panel
+
+### Removed
+
+- Removed redundant "Connected. Receiving live printer status." message
+
+## 0.4.1
 
 ### Changed
 

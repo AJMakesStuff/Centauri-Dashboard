@@ -78,6 +78,7 @@ class CC2Connection {
     const code = active ? ({ 2501: 5, 2502: 6, 2505: 6, 2503: 7, 2401: 12 }[sub] || 13) : 0;
     return {
       CurrentStatus: active ? 1 : 0,
+      HomingAllowed: Number(machine.status) === 1 && !active,
       TempOfNozzle: s.extruder?.temperature, TempTargetNozzle: s.extruder?.target,
       TempOfHotbed: s.heater_bed?.temperature, TempTargetHotbed: s.heater_bed?.target,
       TempOfBox: s.ztemperature_sensor?.temperature,
@@ -110,7 +111,7 @@ class CC2Connection {
       return;
     }
     const data = JSON.parse(payload).Data;
-    let method = { 0: 1002, 1: 1001, 386: 1042, 129: 1021, 130: 1022, 131: 1023, 403: 1029 }[data.Cmd];
+    let method = { 0: 1002, 1: 1001, 386: 1042, 129: 1021, 130: 1022, 131: 1023, 402: 1026, 403: 1029 }[data.Cmd];
     if (!method) throw new Error('Unsupported CC2 command');
     let params = {};
     if (data.Cmd === 403) {
@@ -132,7 +133,7 @@ class CC2Connection {
     if (method === 1002 && this.queue.some(item => item.method === 1002)) return;
     const item = { method, params, id };
     // User actions take priority over background reads; requests are never replayed after disconnect.
-    if ([1021, 1022, 1023, 1028, 1029, 1030].includes(method)) this.queue.unshift(item);
+    if ([1021, 1022, 1023, 1026, 1028, 1029, 1030].includes(method)) this.queue.unshift(item);
     else this.queue.push(item);
     this.flush();
   }

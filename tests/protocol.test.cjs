@@ -9,7 +9,7 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
   let timerId = 0, time = 100000;
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
-      value: '', style: {}, children: [], classList: { toggle() { }, add() { }, remove() { } },
+      value: '', style: {}, children: [], parentElement: {}, classList: { toggle() { }, add() { }, remove() { } },
       append(child) { this.children.push(child); child.remove = () => this.children.splice(this.children.indexOf(child), 1); },
       querySelectorAll() { return [...this.children]; },
       setAttribute() { }, removeAttribute() { }, after() { }, showModal() { this.open = true; }, close() { this.open = false; },
@@ -268,7 +268,7 @@ test('CC1 with no Serial Number adopts the MainboardID from the printer push, th
   assert.equal(JSON.parse(socket.sent[0]).Data.serialNumber, '000000000001d354');
   assert.equal(t.stored().serialNumber, '000000000001d354');
   assert.equal(t.element('camera').src, 'http://192.168.1.2:3031/video');
-  assert.match(t.element('connection').innerHTML, /Receiving live printer status/);
+  assert.equal(t.element('connection').parentElement.hidden, true);
 });
 
 test('CC1 discovery reads the ID from the frame topic and still renders that frame', () => {
@@ -350,7 +350,7 @@ test('an empty Serial Number keeps the dialog open with a spinner until the prin
   assert.equal(t.element('serialSpinner').hidden, true);
   assert.equal(t.element('settingsDialog').open, false);
   assert.equal(t.element('serialNumber').value, '000000000001d354');
-  assert.match(t.element('connection').innerHTML, /Receiving live printer status/);
+  assert.equal(t.element('connection').parentElement.hidden, true);
 });
 
 test('discovery that cannot reach the printer says so in the open dialog', () => {
@@ -741,4 +741,91 @@ test('fullscreen layout setting switches immediately, persists, and restores ori
   t.element('redesignedFullscreen').onchange();
   assert.equal(t.run('fullscreenDockActive'), false);
   assert.equal(t.element('statsPanelToggle').hidden, false);
+});
+
+test('Home requires idle status, sends all axes once, and handles rejection', () => {
+  const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+  const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+  assert.equal(t.element('homePrinter').disabled, true);
+  const status = (machine, print) => socket.onmessage({ data: JSON.stringify({ Status: { CurrentStatus: machine, PrintInfo: { Status: print } } }) });
+  status(1, 6);
+  assert.equal(t.element('homePrinter').disabled, true);
+  status(3, 0);
+  assert.equal(t.element('homePrinter').disabled, true);
+  status(0, 0);
+  assert.equal(t.element('homePrinter').disabled, false);
+  t.element('homePrinter').onclick();
+  const request = JSON.parse(socket.sent.at(-1));
+  assert.equal(request.Data.Cmd, 402);
+  assert.deepEqual(request.Data.Data, { Axis: 'XYZ' });
+  const count = socket.sent.length;
+  t.element('homePrinter').onclick();
+  assert.equal(socket.sent.length, count);
+  socket.onmessage({ data: JSON.stringify({ Data: { RequestID: request.Data.RequestID, Data: { Ack: 1 } } }) });
+  assert.match(t.element('printControlStatus').textContent, /Homing rejected/);
+});
+
+test('CC2 Home maps to method 1026 and only permits explicitly idle machines', () => {
+  const t = setup(cc2); t.register();
+  assert.equal(t.run('CC2Connection.normalize({machine_status:{status:3}}).HomingAllowed'), false);
+  assert.equal(t.run('CC2Connection.normalize({}).HomingAllowed'), false);
+  assert.equal(t.run('CC2Connection.normalize({machine_status:{status:1}}).HomingAllowed'), true);
+  t.run("socket.send(JSON.stringify(message(402, {Axis:'XYZ'})))");
+  t.tick();
+  const request = t.clients[0].sent.map(item => item.data).find(item => item.method === 1026);
+  assert.ok(request);
+  assert.deepEqual(request.params, {});
+});
+
+
+test('Home stays locked after acknowledgement and timeout until busy returns to idle', () => {
+  for (const acknowledge of [true, false]) {
+    const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
+    const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+    const status = machine => socket.onmessage({ data: JSON.stringify({ Status: { CurrentStatus: machine, PrintInfo: { Status: 0 } } }) });
+    status(0);
+    t.element('homePrinter').onclick();
+    const request = JSON.parse(socket.sent.at(-1));
+    if (acknowledge) socket.onmessage({ data: JSON.stringify({ Data: { RequestID: request.Data.RequestID, Data: { Ack: 0 } } }) });
+    else t.timers.get(t.run('pendingControl.timer')).fn();
+    status(0);
+    assert.equal(t.element('homePrinter').disabled, true);
+    assert.equal(t.element('homePrinter').textContent, '⌂ Homing…');
+    status(3);
+    assert.equal(t.element('homePrinter').disabled, true);
+    status(0);
+    assert.equal(t.element('homePrinter').disabled, false);
+    assert.equal(t.element('printControlStatus').textContent, 'Homing complete.');
+  }
+});
+
+test('homing lock survives reloads, stays scoped to its printer, and clears on completion', () => {
+  const store = new Map();
+  const settings = { printerIp: '192.168.1.2', serialNumber: 'board' };
+  const connect = t => {
+    const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
+    return machine => socket.onmessage({ data: JSON.stringify({ Status: { CurrentStatus: machine, PrintInfo: { Status: 0 } } }) });
+  };
+  const first = setup(settings, true, undefined, '', store);
+  const firstStatus = connect(first);
+  firstStatus(0); first.element('homePrinter').onclick();
+  const refreshed = setup(settings, true, undefined, '', store);
+  const refreshedStatus = connect(refreshed);
+  assert.equal(refreshed.element('homePrinter').textContent, '⌂ Homing…');
+  refreshedStatus(0);
+  assert.equal(refreshed.element('homePrinter').disabled, true);
+  refreshedStatus(3); refreshedStatus(3);
+  assert.equal(refreshed.element('homePrinter').disabled, true);
+  const again = setup(settings, true, undefined, '', store);
+  const againStatus = connect(again);
+  assert.equal(again.element('homePrinter').disabled, true);
+  againStatus(0);
+  assert.equal(again.element('homePrinter').disabled, false);
+  const completed = setup(settings, true, undefined, '', store);
+  connect(completed)(0);
+  assert.equal(completed.element('homePrinter').disabled, false);
+  completed.element('homePrinter').onclick();
+  const other = setup({ printerIp: '192.168.1.3', serialNumber: 'other' }, true, undefined, '', store);
+  connect(other)(0);
+  assert.equal(other.element('homePrinter').disabled, false);
 });

@@ -89,7 +89,13 @@ function selectPrinter(model) {
 }
 let socket, reconnectTimer, discoveryTimer, heartbeatTimer, connectionVersion = 0, retryDelay = 1500, currentLightOn = false;
 const states = { 0: 'Idle', 1: 'Printing', 2: 'Transferring', 3: 'Calibrating', 4: 'Testing' };
-let controlsConnected = false, printStatus = null, activePrint = false, pendingControl;
+let controlsConnected = false, printStatus = null, activePrint = false, pendingControl, machineIdle = false, homingPending = false, homingSawBusy = false;
+function homingStorageKey() {
+  return 'dashboard-homing:' + JSON.stringify([saved.printerModel, saved.printerIp]);
+}
+function saveHomingState() {
+  localStorage.setItem(homingStorageKey(), JSON.stringify({ pending: homingPending, sawBusy: homingSawBusy }));
+}
 const deviceControls = {
   nozzle: { label: 'Nozzle', max: 320, field: 'TempTargetNozzle' },
   bed: { label: 'Bed', max: 110, field: 'TempTargetHotbed' },
@@ -163,9 +169,15 @@ function updatePrintControls() {
   $('resumePrint').disabled = !ready || !activePrint || printStatus !== 6;
   $('pausePrint').disabled = !ready || !activePrint || [5, 6, 7, 12].includes(printStatus);
   $('stopPrint').disabled = !ready || !activePrint || printStatus === 7;
+  $('homePrinter').disabled = !ready || !machineIdle || activePrint || devicePrintActive || homingPending;
+  $('homePrinter').textContent = homingPending ? '⌂ Homing…' : '⌂ Home';
 }
 function resetPrintControls(connected) {
   controlsConnected = connected;
+  machineIdle = false;
+  const homingState = JSON.parse(localStorage.getItem(homingStorageKey()) || '{}');
+  homingPending = homingState.pending === true;
+  homingSawBusy = homingState.sawBusy === true;
   devicePrintActive = false;
   clearTimeout(pendingDevice?.timer);
   pendingDevice = undefined;
@@ -186,21 +198,23 @@ function resetPrintControls(connected) {
   show('printControlStatus', '');
   updatePrintControls();
 }
-function controlPrint(cmd, buttonId, label) {
+function controlPrint(cmd, buttonId, label, data = {}) {
   if ($(buttonId).disabled || socket?.readyState !== WebSocket.OPEN) return;
-  const request = message(cmd);
-  pendingControl = { id: request.Data.RequestID, label };
+  const request = message(cmd, data);
+  pendingControl = { id: request.Data.RequestID, label, cmd };
+  if (cmd === 402) { homingPending = true; homingSawBusy = false; saveHomingState(); }
   show('printControlStatus', `${label} requested…`);
   updatePrintControls();
   pendingControl.timer = setTimeout(() => {
     pendingControl = undefined;
-    show('printControlStatus', 'No confirmation received. Check printer status before retrying.');
+    show('printControlStatus', homingPending ? 'Waiting for the printer to report homing complete.' : 'No confirmation received. Check printer status before retrying.');
     updatePrintControls();
   }, 10000);
   try { socket.send(JSON.stringify(request)); }
   catch {
     clearTimeout(pendingControl.timer);
     pendingControl = undefined;
+    if (cmd === 402) { homingPending = false; homingSawBusy = false; saveHomingState(); }
     show('printControlStatus', 'Command could not be sent. Reconnect and try again.');
     updatePrintControls();
   }
@@ -208,9 +222,10 @@ function controlPrint(cmd, buttonId, label) {
 function handlePrintResponse(raw) {
   const response = raw.Data;
   if (!pendingControl || response?.RequestID !== pendingControl.id || response.Data?.Ack == null) return;
-  const { label, timer } = pendingControl;
+  const { label, timer, cmd } = pendingControl;
   clearTimeout(timer);
   pendingControl = undefined;
+  if (cmd === 402 && Number(response.Data.Ack) !== 0) { homingPending = false; homingSawBusy = false; saveHomingState(); }
   show('printControlStatus', Number(response.Data.Ack) === 0 ? `${label} accepted. Waiting for updated printer status.` : `${label} rejected by printer (code ${response.Data.Ack}).`);
   updatePrintControls();
   send(0, {});
@@ -228,7 +243,14 @@ const finishTime = secondsLeft => {
   const time = finish.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
   return finish.toDateString() === now.toDateString() ? time : `tomorrow ${time}`;
 };
-function setConnection(message, connected = false) { resetPrintControls(connected); $('connection').innerHTML = `<b>${connected ? 'Connected.' : 'Offline.'}</b> ${message}`; $('liveBadge').classList.toggle('online', connected); $('overlay').classList.toggle('connected', connected); $('lightToggle').disabled = !connected; $('liveText').textContent = connected ? 'LIVE' : 'OFFLINE'; }
+function setConnection(message, connected = false) {
+  resetPrintControls(connected);
+  $('connection').innerHTML = connected ? '' : `<b>Offline.</b> ${message}`;
+  $('connection').parentElement.hidden = connected;
+  $('liveBadge').classList.toggle('online', connected);
+  $('lightToggle').disabled = !connected;
+  $('liveText').textContent = connected ? 'CONNECTED, SHOWING LIVE FEED' : 'OFFLINE';
+}
 function updateLightState(on) { currentLightOn = Boolean(on); $('lightToggle').setAttribute('aria-pressed', String(currentLightOn)); }
 function requestId() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -261,6 +283,17 @@ function updateStatus(raw) {
   const total = Number(info.TotalTicks), current = Number(info.CurrentTicks);
   const machineCode = Number(Array.isArray(s.CurrentStatus) ? s.CurrentStatus[0] : s.CurrentStatus);
   const printCode = info.Status == null ? null : Number(info.Status);
+  machineIdle = (s.HomingAllowed ?? machineCode === 0) && (printCode == null || [0, 8, 9].includes(printCode));
+  if (homingPending && ('CurrentStatus' in s || 'HomingAllowed' in s)) {
+    if (!machineIdle && !homingSawBusy) { homingSawBusy = true; saveHomingState(); }
+    else if (machineIdle && homingSawBusy) {
+      homingPending = false;
+      homingSawBusy = false;
+      saveHomingState();
+      if (pendingControl?.cmd === 402) { clearTimeout(pendingControl.timer); pendingControl = undefined; }
+      show('printControlStatus', 'Homing complete.');
+    }
+  }
   const printInProgress = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10].includes(printCode));
   const hasActiveJob = Boolean(info.Filename) && printInProgress;
   if (s.PrintInfo || 'CurrentStatus' in s) {
@@ -543,6 +576,7 @@ $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightStat
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
 $('resumePrint').onclick = () => controlPrint(131, 'resumePrint', 'Resume');
 $('pausePrint').onclick = () => controlPrint(129, 'pausePrint', 'Pause');
+$('homePrinter').onclick = () => controlPrint(402, 'homePrinter', 'Homing', { Axis: 'XYZ' });
 $('refreshButton').onclick = () => { retryDelay = 1500; setConnection('Refreshing printer connection…'); stopConnection(); connect(); };
 $('fullscreenButton').onclick = async () => {
   try { document.fullscreenElement ? await document.exitFullscreen() : await document.querySelector('.shell').requestFullscreen(); }
@@ -572,7 +606,7 @@ function layoutFullscreenDock(fullscreen) {
     dock.append($('printControlPanel'));
     $('devicePanel').open = true;
   } else if (!fullscreen && fullscreenDockActive) {
-    document.querySelector('.print-controls').after($('devicePanel'));
+    $('homePrinter').after($('devicePanel'));
     document.querySelector('.camera').append($('printControlPanel'));
     document.querySelector('.camera').after($('overlay'));
     $('devicePanel').open = devicePanelWasOpen;

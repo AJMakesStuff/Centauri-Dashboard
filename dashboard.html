@@ -43,6 +43,7 @@
           <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print" disabled>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" /></svg></button>
         </div>
+        <button id="homePrinter" class="home-printer" type="button" title="Home all axes when the printer is idle" disabled>⌂ Home</button>
         <details class="device-panel" id="devicePanel">
           <summary>Fans &amp; temperature</summary>
           <div id="deviceControlRows"></div>
@@ -61,7 +62,7 @@
         <div class="overlay-heading">
           <div class="label">Current job</div>
           <div class="overlay-actions">
-            <div class="connection-beacon" id="connectionBeacon"><span class="dot"></span>Connected</div><button
+            <button
               class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
               title="Refresh printer connection">↻</button>
           </div>
