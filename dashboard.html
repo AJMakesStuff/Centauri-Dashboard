@@ -21,7 +21,8 @@
           <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
           <button id="switchBoth" type="button" aria-pressed="false">Both</button>
         </div>
-        <button id="fullscreenButton" aria-label="Toggle fullscreen" title="Toggle fullscreen">⛶</button><button id="settingsButton" aria-label="Open settings" title="Open settings">⚙</button>
+        <button id="fullscreenButton" aria-label="Toggle fullscreen" title="Toggle fullscreen">⛶</button><button
+          id="settingsButton" aria-label="Open settings" title="Open settings">⚙</button>
       </div>
     </header>
     <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
@@ -33,59 +34,71 @@
       <div class="live" id="liveBadge"><span class="dot"></span><span id="liveText">OFFLINE</span></div>
       <div class="print-control-panel" id="printControlPanel">
         <button id="controlsPanelToggle" class="panel-toggle controls-panel-toggle" type="button"
-          aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel" title="Hide controls panel" hidden>›</button>
+          aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel"
+          title="Hide controls panel" hidden>›</button>
         <div id="controlsPanelContent">
-        <div class="print-controls" role="group" aria-label="Print controls">
-          <button id="stopPrint" class="stop-print" type="button" title="Stop the current print" aria-label="Stop the current print" disabled>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" /></svg></button>
-          <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print" aria-label="Resume the paused print" disabled>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2 L14 8 L4 14 Z" /></svg></button>
-          <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print" disabled>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" /></svg></button>
-        </div>
-        <button id="homePrinter" class="home-printer" type="button" title="Home all axes when the printer is idle" disabled>⌂ Home</button>
-        <details class="device-panel" id="devicePanel">
-          <summary>Fans &amp; temperature</summary>
-          <div id="deviceControlRows"></div>
-          <p class="device-hint">Set a target or choose Off. Fan speeds use percent.</p>
-          <p id="deviceControlStatus" class="print-control-status" role="status" aria-live="polite">Connect to control your printer.</p>
-        </details>
-        <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
+          <div class="print-controls" role="group" aria-label="Print controls">
+            <button id="stopPrint" class="stop-print" type="button" title="Stop the current print"
+              aria-label="Stop the current print" disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect x="3" y="3" width="10" height="10" />
+              </svg></button>
+            <button id="resumePrint" class="resume-print" type="button" title="Resume the paused print"
+              aria-label="Resume the paused print" disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4 2 L14 8 L4 14 Z" />
+              </svg></button>
+            <button id="pausePrint" type="button" title="Pause the current print" aria-label="Pause the current print"
+              disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M3 2 H6 V14 H3 Z M10 2 H13 V14 H10 Z" />
+              </svg></button>
+          </div>
+          <button id="homePrinter" class="home-printer" type="button" title="Home all axes when the printer is idle"
+            disabled>⌂ Home</button>
+          <details class="device-panel" id="devicePanel">
+            <summary>Fans &amp; temperature</summary>
+            <div id="deviceControlRows"></div>
+            <p class="device-hint">Set a target or choose Off. Fan speeds use percent.</p>
+            <p id="deviceControlStatus" class="print-control-status" role="status" aria-live="polite">Connect to control
+              your printer.</p>
+          </details>
+          <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
         </div>
       </div>
     </section>
     <section class="overlay" id="overlay">
       <button id="statsPanelToggle" class="panel-toggle stats-panel-toggle" type="button"
-        aria-controls="statsPanelContent" aria-expanded="true" aria-label="Hide stats panel" title="Hide stats panel" hidden>‹</button>
+        aria-controls="statsPanelContent" aria-expanded="true" aria-label="Hide stats panel" title="Hide stats panel"
+        hidden>‹</button>
       <div id="statsPanelContent">
-      <section class="job-details">
-        <div class="overlay-heading">
-          <div class="label">Current job</div>
-          <div class="overlay-actions">
-            <button
-              class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
-              title="Refresh printer connection">↻</button>
+        <section class="job-details">
+          <div class="overlay-heading">
+            <div class="label">Current job</div>
+            <div class="overlay-actions">
+              <button class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
+                title="Refresh printer connection">↻</button>
+            </div>
           </div>
-        </div>
-        <div class="job-title" id="filename">Waiting for a print…</div>
-        <div class="progress-row"><span class="label" id="machineStatus">Waiting for status</span><strong
-            id="progress">—</strong></div>
-        <div class="track">
-          <div class="fill" id="progressFill"></div>
-        </div>
-        <div class="details"><span id="layer">Layer — / —</span><span id="remaining">Finishes —</span></div>
-      </section>
-      <section class="temperatures" id="temperaturesPanel">
-        <div class="label temperature-label">Temperatures</div>
-        <div class="stat-grid">
-          <div class="stat"><span class="label">Nozzle</span><span class="value" id="nozzle">—</span><span
-              class="target-temperature">Target <span id="nozzleTarget">—</span></span></div>
-          <div class="stat"><span class="label">Bed</span><span class="value" id="bed">—</span><span
-              class="target-temperature">Target <span id="bedTarget">—</span></span></div>
-          <div class="stat chamber-stat"><span class="label">Chamber</span><span class="value" id="chamber">—</span>
+          <div class="job-title" id="filename">Waiting for a print…</div>
+          <div class="progress-row"><span class="label" id="machineStatus">Waiting for status</span><strong
+              id="progress">—</strong></div>
+          <div class="track">
+            <div class="fill" id="progressFill"></div>
           </div>
-        </div>
-      </section>
+          <div class="details"><span id="layer">Layer — / —</span><span id="remaining">Finishes —</span></div>
+        </section>
+        <section class="temperatures" id="temperaturesPanel">
+          <div class="label temperature-label">Temperatures</div>
+          <div class="stat-grid">
+            <div class="stat"><span class="label">Nozzle</span><span class="value" id="nozzle">—</span><span
+                class="target-temperature">Target <span id="nozzleTarget">—</span></span></div>
+            <div class="stat"><span class="label">Bed</span><span class="value" id="bed">—</span><span
+                class="target-temperature">Target <span id="bedTarget">—</span></span></div>
+            <div class="stat chamber-stat"><span class="label">Chamber</span><span class="value" id="chamber">—</span>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
     <div id="fullscreenDock" class="fullscreen-dock" hidden>
@@ -103,8 +116,8 @@
       <p id="settingsNotice" class="settings-notice" hidden></p>
       <label class="toggle-setting" for="redesignedFullscreen"><span>Use redesigned fullscreen layout</span><input
           id="redesignedFullscreen" type="checkbox" role="switch" checked /></label>
-      <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a print</span><input
-          id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
+      <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a
+          print</span><input id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
       <label class="toggle-setting" for="lockFansDuringPrint"><span>Lock fans during a print</span><input
           id="lockFansDuringPrint" type="checkbox" role="switch" /></label>
       <h3>Printer connection</h3>
@@ -125,8 +138,8 @@
       <p id="serialHint">Optional on the Centauri Carbon. Leave it blank and the dashboard reads the ID from the printer
         once it connects.</p>
       <div id="cc2Settings" hidden>
-        <label for="accessCode">LAN access code</label><input id="accessCode" type="text" autocomplete="off" spellcheck="false" autocapitalize="none"
-          disabled />
+        <label for="accessCode">LAN access code</label><input id="accessCode" type="text" autocomplete="off"
+          spellcheck="false" autocapitalize="none" disabled />
         <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
           connects to MQTT on WebSocket port 9001.</p>
       </div>

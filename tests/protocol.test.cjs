@@ -25,7 +25,7 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
   }
   const context = vm.createContext({
     console, fetch, location: { search }, URLSearchParams,
-    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    matchMedia: () => ({ matches: false, addEventListener() { } }),
     crypto: secureContext ? require('node:crypto').webcrypto : {
       getRandomValues: array => require('node:crypto').webcrypto.getRandomValues(array)
     }, WebSocket: Socket,
@@ -144,10 +144,12 @@ test('quick switching supports CC1 discovery and retains the discovered ID', () 
 });
 
 test('migration preserves recent top-level edits and the other printer profile', () => {
-  const t = setup({ ...cc2, profiles: {
-    cc2: { ...cc2, accessCode: 'outdated' },
-    cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }
-  } });
+  const t = setup({
+    ...cc2, profiles: {
+      cc2: { ...cc2, accessCode: 'outdated' },
+      cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }
+    }
+  });
   assert.equal(t.clients[0].options.password, 'test-code');
   t.element('switchCC1').onclick();
   assert.equal(t.stored().profiles.cc2.accessCode, 'test-code');
@@ -451,9 +453,11 @@ test('Both view restores without opening an extra parent connection', () => {
 });
 
 test('embedded printers use independent profiles and merge settings without losing other edits', () => {
-  const store = new Map([['dashboard', JSON.stringify({ ...cc2, viewMode: 'both', profiles: {
-    cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }, cc2
-  } })]]);
+  const store = new Map([['dashboard', JSON.stringify({
+    ...cc2, viewMode: 'both', profiles: {
+      cc1: { printerIp: '192.168.1.2', serialNumber: 'board' }, cc2
+    }
+  })]]);
   const first = setup({}, true, undefined, '?printer=cc1', store);
   const second = setup({}, true, undefined, '?printer=cc2', store);
   assert.equal(first.sockets[0].url, 'ws://192.168.1.2:3030/websocket');

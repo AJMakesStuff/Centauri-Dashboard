@@ -16,8 +16,10 @@ let bothView = false;
 function persistSettings(setting) {
   // Each view owns one profile. Merge writes so another live view's edits survive.
   const latest = JSON.parse(localStorage.getItem('dashboard') || '{}');
-  saved.profiles = { ...saved.profiles, ...latest.profiles,
-    [saved.printerModel]: saved.profiles[saved.printerModel] };
+  saved.profiles = {
+    ...saved.profiles, ...latest.profiles,
+    [saved.printerModel]: saved.profiles[saved.printerModel]
+  };
   const next = embedded ? { ...latest, profiles: saved.profiles } : saved;
   if (embedded && latest.printerModel === saved.printerModel) {
     for (const key of connectionFields) next[key] = saved[key];

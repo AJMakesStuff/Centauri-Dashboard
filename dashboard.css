@@ -385,8 +385,16 @@ button.primary {
     padding: 8px;
 }
 
-.home-printer { width: 100%; margin-top: 8px; padding: 7px 10px; }
-.home-printer:disabled { opacity: .4; cursor: not-allowed; }
+.home-printer {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 10px;
+}
+
+.home-printer:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
 
 .print-controls svg {
     display: block;
@@ -556,7 +564,9 @@ dialog h3 {
     font-size: .85rem;
 }
 
-.status[hidden] { display: none; }
+.status[hidden] {
+    display: none;
+}
 
 .status b {
     color: var(--text);
@@ -803,8 +813,13 @@ select {
     outline-offset: -3px;
 }
 
-.stats-panel-toggle { right: 0; }
-.controls-panel-toggle { left: 0; }
+.stats-panel-toggle {
+    right: 0;
+}
+
+.controls-panel-toggle {
+    left: 0;
+}
 
 .panel-toggle::before {
     content: '';
@@ -831,7 +846,10 @@ select {
     transition: transform .36s cubic-bezier(.22, 1, .36, 1);
 }
 
-.shell:fullscreen .overlay { padding-right: 52px; }
+.shell:fullscreen .overlay {
+    padding-right: 52px;
+}
+
 .shell:fullscreen .print-control-panel {
     padding-left: 42px;
     width: 294px;
@@ -868,7 +886,9 @@ select {
 }
 
 @media (max-width:760px) {
-    .shell:fullscreen #statsPanelContent { max-height: calc(100vh - 268px); }
+    .shell:fullscreen #statsPanelContent {
+        max-height: calc(100vh - 268px);
+    }
 }
 
 @media (max-width:720px) {
@@ -878,47 +898,157 @@ select {
 }
 
 @media (prefers-reduced-motion:reduce) {
+
     .shell:fullscreen .overlay,
     .shell:fullscreen .print-control-panel {
         transition: none;
     }
-    .shell:fullscreen .live { transition: none; }
+
+    .shell:fullscreen .live {
+        transition: none;
+    }
 }
 
 
 /* Each panel runs an independent connection and scopes controls to its printer. */
-.shell.both-view { max-width: 1920px; }
-.both-view > .camera, .both-view > .overlay, .both-view > .status,
-.both-view > footer, .both-view #settingsButton { display: none; }
-.both-printers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
-.both-printers[hidden] { display: none; }
-.both-printers iframe { width: 100%; height: 900px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); }
-.embedded-dashboard { background: var(--bg); }
-.embedded-dashboard .shell { min-height: 0; padding: 16px; }
-.embedded-dashboard footer { display: none; }
-.embedded-dashboard #fullscreenButton { display: none; }
-.shell.both-view:fullscreen { padding: 20px; overflow: auto; }
-.shell.both-view:fullscreen > header { position: static; }
-.shell.both-view:fullscreen #printerSwitch { display: none; }
+.shell.both-view {
+    max-width: 1920px;
+}
+
+.both-view>.camera,
+.both-view>.overlay,
+.both-view>.status,
+.both-view>footer,
+.both-view #settingsButton {
+    display: none;
+}
+
+.both-printers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.both-printers[hidden] {
+    display: none;
+}
+
+.both-printers iframe {
+    width: 100%;
+    height: 900px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--bg);
+}
+
+.embedded-dashboard {
+    background: var(--bg);
+}
+
+.embedded-dashboard .shell {
+    min-height: 0;
+    padding: 16px;
+}
+
+.embedded-dashboard footer {
+    display: none;
+}
+
+.embedded-dashboard #fullscreenButton {
+    display: none;
+}
+
+.shell.both-view:fullscreen {
+    padding: 20px;
+    overflow: auto;
+}
+
+.shell.both-view:fullscreen>header {
+    position: static;
+}
+
+.shell.both-view:fullscreen #printerSwitch {
+    display: none;
+}
+
 @media (max-width: 1100px) {
-    .both-printers { grid-template-columns: 1fr; }
+    .both-printers {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* The combined fullscreen view must never reveal the parent printer's UI. */
-.shell.both-view > .camera, .shell.both-view > .overlay,
-.shell.both-view > .status, .shell.both-view #lightToggle { display: none; }
+.shell.both-view>.camera,
+.shell.both-view>.overlay,
+.shell.both-view>.status,
+.shell.both-view #lightToggle {
+    display: none;
+}
 
-.device-panel { margin-top: 8px; border-top: 1px solid var(--line); font-size: .78rem; }
-.device-panel summary { padding: 10px 2px; cursor: pointer; font-weight: 600; }
-.device-control-row { margin: 0 0 10px; }
-.device-control-row label { display: flex; justify-content: space-between; margin: 0 0 5px; font-size: .78rem; }
-.device-control-row label span, .device-hint { color: var(--muted); }
-.device-control-inputs { display: flex; align-items: center; gap: 5px; }
-.device-control-inputs input { width: 0; min-width: 0; flex: 1; margin: 0; padding: 6px; font-size: .78rem; }
-.device-control-inputs button { padding: 6px 8px; font-size: .75rem; }
-.device-control-inputs button:disabled, .device-control-inputs input:disabled { opacity: .45; cursor: not-allowed; }
-.device-hint { font-size: .7rem; line-height: 1.4; }
-#controlsPanelContent { max-height: min(480px, 65vh); overflow-y: auto; }
+.device-panel {
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+    font-size: .78rem;
+}
+
+.device-panel summary {
+    padding: 10px 2px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.device-control-row {
+    margin: 0 0 10px;
+}
+
+.device-control-row label {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 5px;
+    font-size: .78rem;
+}
+
+.device-control-row label span,
+.device-hint {
+    color: var(--muted);
+}
+
+.device-control-inputs {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.device-control-inputs input {
+    width: 0;
+    min-width: 0;
+    flex: 1;
+    margin: 0;
+    padding: 6px;
+    font-size: .78rem;
+}
+
+.device-control-inputs button {
+    padding: 6px 8px;
+    font-size: .75rem;
+}
+
+.device-control-inputs button:disabled,
+.device-control-inputs input:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.device-hint {
+    font-size: .7rem;
+    line-height: 1.4;
+}
+
+#controlsPanelContent {
+    max-height: min(480px, 65vh);
+    overflow-y: auto;
+}
 
 /* Phone layout: keep the feed clear and put controls in the page flow. */
 @media (max-width: 720px) {
@@ -934,10 +1064,27 @@ select {
         margin-bottom: 16px;
     }
 
-    .shell:not(:fullscreen) header > .button-group { display: contents; }
-    .shell:not(:fullscreen) header > div:first-child { grid-column: 1; grid-row: 1; }
-    .shell:not(:fullscreen) #settingsButton { grid-column: 3; grid-row: 1; }
-    .shell:not(:fullscreen) #fullscreenButton { grid-column: 2; grid-row: 1; min-width: 44px; min-height: 44px; }
+    .shell:not(:fullscreen) header>.button-group {
+        display: contents;
+    }
+
+    .shell:not(:fullscreen) header>div:first-child {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .shell:not(:fullscreen) #settingsButton {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .shell:not(:fullscreen) #fullscreenButton {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
     .shell:not(:fullscreen) .printer-switch {
         grid-column: 1 / -1;
         grid-row: 2;
@@ -946,8 +1093,19 @@ select {
         border: 1px solid var(--line);
         border-radius: 13px;
     }
-    .printer-switch button { flex: 1; min-height: 44px; }
-    #settingsButton, #closeButton, .refresh-button, .light-toggle { min-width: 44px; min-height: 44px; }
+
+    .printer-switch button {
+        flex: 1;
+        min-height: 44px;
+    }
+
+    #settingsButton,
+    #closeButton,
+    .refresh-button,
+    .light-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
 
     .shell:not(:fullscreen) .camera {
         display: grid;
@@ -956,6 +1114,7 @@ select {
         aspect-ratio: auto;
         border-radius: 14px;
     }
+
     .shell:not(:fullscreen) .camera img,
     .shell:not(:fullscreen) .camera .empty {
         grid-column: 1;
@@ -966,7 +1125,11 @@ select {
         aspect-ratio: 4 / 3;
         min-width: 0;
     }
-    .shell:not(:fullscreen) .camera .empty { padding: 64px 24px; }
+
+    .shell:not(:fullscreen) .camera .empty {
+        padding: 64px 24px;
+    }
+
     .shell:not(:fullscreen) .print-control-panel {
         position: static;
         grid-row: 2;
@@ -978,27 +1141,103 @@ select {
         border-radius: 0;
         background: #101923;
     }
-    .shell:not(:fullscreen) #controlsPanelContent { max-height: none; overflow: visible; }
-    .print-control-panel .print-controls button { height: 48px; }
-    .device-panel summary { min-height: 44px; padding: 14px 2px; }
-    .device-control-inputs input, .device-control-inputs button { min-height: 44px; font-size: 1rem; }
-    .device-control-row { margin-bottom: 16px; }
-    .device-control-row label { flex-wrap: wrap; gap: 4px; }
 
-    .shell:not(:fullscreen) .overlay { margin-top: 12px; padding: 14px; gap: 20px; }
-    .job-details, .temperatures { min-width: 0; }
-    .shell:not(:fullscreen) .job-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
-    .details { flex-wrap: wrap; }
-    .stat-grid { gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .stat { padding: 10px 7px; }
-    .stat .value { font-size: 1.1rem; }
-    .stat .label { letter-spacing: .04em; }
-    .target-temperature { overflow-wrap: anywhere; }
-    .status { align-items: flex-start; line-height: 1.5; overflow-wrap: anywhere; }
-    .status > .dot { flex-shrink: 0; margin-top: 6px; }
-    footer { flex-wrap: wrap; gap: 5px; margin-top: 24px; }
-    .both-printers { gap: 12px; }
-    .embedded-dashboard .shell:not(:fullscreen) { min-height: 0; padding: 12px; }
+    .shell:not(:fullscreen) #controlsPanelContent {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .print-control-panel .print-controls button {
+        height: 48px;
+    }
+
+    .device-panel summary {
+        min-height: 44px;
+        padding: 14px 2px;
+    }
+
+    .device-control-inputs input,
+    .device-control-inputs button {
+        min-height: 44px;
+        font-size: 1rem;
+    }
+
+    .device-control-row {
+        margin-bottom: 16px;
+    }
+
+    .device-control-row label {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .shell:not(:fullscreen) .overlay {
+        margin-top: 12px;
+        padding: 14px;
+        gap: 20px;
+    }
+
+    .job-details,
+    .temperatures {
+        min-width: 0;
+    }
+
+    .shell:not(:fullscreen) .job-title {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
+    }
+
+    .details {
+        flex-wrap: wrap;
+    }
+
+    .stat-grid {
+        gap: 6px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .stat {
+        padding: 10px 7px;
+    }
+
+    .stat .value {
+        font-size: 1.1rem;
+    }
+
+    .stat .label {
+        letter-spacing: .04em;
+    }
+
+    .target-temperature {
+        overflow-wrap: anywhere;
+    }
+
+    .status {
+        align-items: flex-start;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .status>.dot {
+        flex-shrink: 0;
+        margin-top: 6px;
+    }
+
+    footer {
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 24px;
+    }
+
+    .both-printers {
+        gap: 12px;
+    }
+
+    .embedded-dashboard .shell:not(:fullscreen) {
+        min-height: 0;
+        padding: 12px;
+    }
 
     dialog {
         width: 100%;
@@ -1010,14 +1249,28 @@ select {
         overflow-y: auto;
         overscroll-behavior: contain;
     }
-    dialog input, dialog select { font-size: 16px; min-height: 44px; }
-    dialog .toggle-setting input { min-height: 22px; flex-shrink: 0; }
-    dialog .actions button { width: 100%; min-height: 48px; }
+
+    dialog input,
+    dialog select {
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    dialog .toggle-setting input {
+        min-height: 22px;
+        flex-shrink: 0;
+    }
+
+    dialog .actions button {
+        width: 100%;
+        min-height: 48px;
+    }
 }
 
 /* Mobile fullscreen reserves space for the feed; panels never float over it.
    The short landscape breakpoint also covers phones rotated sideways. */
-@media (max-width: 720px), (max-width: 960px) and (max-height: 600px) {
+@media (max-width: 720px),
+(max-width: 960px) and (max-height: 600px) {
     .shell:fullscreen {
         height: 100dvh;
         min-height: 0;
@@ -1025,15 +1278,27 @@ select {
         padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
         overscroll-behavior: contain;
     }
+
     .shell:fullscreen header {
         position: static;
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 10px;
     }
-    .shell:fullscreen header .sub { display: none; }
-    .shell:fullscreen .button-group { flex-wrap: wrap; }
-    .shell:fullscreen .button-group button { min-width: 44px; min-height: 44px; }
+
+    .shell:fullscreen header .sub {
+        display: none;
+    }
+
+    .shell:fullscreen .button-group {
+        flex-wrap: wrap;
+    }
+
+    .shell:fullscreen .button-group button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
     .shell:not(.both-view):fullscreen .camera {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -1043,6 +1308,7 @@ select {
         border: 1px solid var(--line);
         border-radius: 12px;
     }
+
     .shell:fullscreen .camera img,
     .shell:fullscreen .camera .empty {
         position: static;
@@ -1051,7 +1317,11 @@ select {
         height: 100%;
         min-height: 0;
     }
-    .shell:fullscreen .camera .empty { padding: 48px 20px 20px; }
+
+    .shell:fullscreen .camera .empty {
+        padding: 48px 20px 20px;
+    }
+
     .shell:fullscreen .live,
     .shell:fullscreen.fullscreen-controls-collapsed .live {
         top: 10px;
@@ -1059,6 +1329,7 @@ select {
         right: auto;
         bottom: auto;
     }
+
     .shell:fullscreen .print-control-panel,
     .shell:fullscreen .overlay {
         position: relative;
@@ -1072,12 +1343,17 @@ select {
         background: #101923;
         border: 1px solid var(--line);
     }
+
     .shell:fullscreen .print-control-panel {
         grid-area: 2 / 1;
         border-width: 1px 0 0;
         border-radius: 0;
     }
-    .shell:fullscreen .overlay { margin-top: 12px; }
+
+    .shell:fullscreen .overlay {
+        margin-top: 12px;
+    }
+
     .shell:fullscreen .panel-toggle:not([hidden]) {
         position: relative;
         inset: auto;
@@ -1088,59 +1364,150 @@ select {
         display: block;
         font-size: 0;
     }
+
     .shell:fullscreen .panel-toggle::before {
         left: auto;
         right: 18px;
         transform: rotate(135deg);
     }
-    .shell:fullscreen .panel-toggle[aria-expanded="false"]::before { transform: rotate(45deg); }
-    .shell:fullscreen .panel-toggle::after { font-size: .85rem; font-weight: 600; }
-    .shell:fullscreen .controls-panel-toggle::after { content: 'Print controls'; }
-    .shell:fullscreen .stats-panel-toggle::after { content: 'Current job & temperatures'; }
+
+    .shell:fullscreen .panel-toggle[aria-expanded="false"]::before {
+        transform: rotate(45deg);
+    }
+
+    .shell:fullscreen .panel-toggle::after {
+        font-size: .85rem;
+        font-weight: 600;
+    }
+
+    .shell:fullscreen .controls-panel-toggle::after {
+        content: 'Print controls';
+    }
+
+    .shell:fullscreen .stats-panel-toggle::after {
+        content: 'Current job & temperatures';
+    }
+
     .shell:fullscreen #controlsPanelContent,
-    .shell:fullscreen #statsPanelContent { max-height: none; overflow: visible; padding: 0 12px 12px; }
+    .shell:fullscreen #statsPanelContent {
+        max-height: none;
+        overflow: visible;
+        padding: 0 12px 12px;
+    }
+
     .shell:fullscreen .overlay.fullscreen-collapsed,
     .shell:fullscreen .print-control-panel.fullscreen-collapsed {
         transform: none;
         background: #101923;
         border-color: var(--line);
     }
-    .shell:fullscreen .fullscreen-collapsed > #controlsPanelContent,
-    .shell:fullscreen .fullscreen-collapsed > #statsPanelContent { display: none; }
-    .shell:fullscreen .job-title { white-space: normal; overflow-wrap: anywhere; }
-    .shell:fullscreen .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .shell:fullscreen .details { flex-wrap: wrap; }
-    .shell:fullscreen .print-controls button { height: 48px; }
-    .shell:fullscreen .device-panel summary { min-height: 44px; }
+
+    .shell:fullscreen .fullscreen-collapsed>#controlsPanelContent,
+    .shell:fullscreen .fullscreen-collapsed>#statsPanelContent {
+        display: none;
+    }
+
+    .shell:fullscreen .job-title {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .shell:fullscreen .stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .shell:fullscreen .details {
+        flex-wrap: wrap;
+    }
+
+    .shell:fullscreen .print-controls button {
+        height: 48px;
+    }
+
+    .shell:fullscreen .device-panel summary {
+        min-height: 44px;
+    }
+
     .shell:fullscreen .device-control-inputs input,
-    .shell:fullscreen .device-control-inputs button { min-height: 44px; font-size: 16px; }
+    .shell:fullscreen .device-control-inputs button {
+        min-height: 44px;
+        font-size: 16px;
+    }
 }
 
 /* Transparent fullscreen control dock. */
-.temperature-gauge { display: none; }
-.shell.desktop-fullscreen:fullscreen { padding: 0; overflow: hidden; }
-.shell.desktop-fullscreen:fullscreen > .camera { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; border-radius: 0; }
-.shell.desktop-fullscreen:fullscreen .camera img { width: 100%; height: 100%; object-fit: contain; }
-.shell.desktop-fullscreen:fullscreen > header { position: absolute; top: 16px; left: 24px; right: 24px; }
-.shell.desktop-fullscreen:fullscreen .live { top: 88px; left: 24px; right: auto; bottom: auto; }
-.fullscreen-dock[hidden], .shell:fullscreen .fullscreen-dock[hidden] { display: none; }
+.temperature-gauge {
+    display: none;
+}
+
+.shell.desktop-fullscreen:fullscreen {
+    padding: 0;
+    overflow: hidden;
+}
+
+.shell.desktop-fullscreen:fullscreen>.camera {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+}
+
+.shell.desktop-fullscreen:fullscreen .camera img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.shell.desktop-fullscreen:fullscreen>header {
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    right: 24px;
+}
+
+.shell.desktop-fullscreen:fullscreen .live {
+    top: 88px;
+    left: 24px;
+    right: auto;
+    bottom: auto;
+}
+
+.fullscreen-dock[hidden],
+.shell:fullscreen .fullscreen-dock[hidden] {
+    display: none;
+}
+
 .shell:fullscreen .fullscreen-dock {
-    position: absolute; z-index: 5; bottom: max(26px, env(safe-area-inset-bottom));
-    left: 0; right: 0; width: 100%;
-    display: grid; grid-template-columns: 300px minmax(240px, 1fr) 180px;
-    align-items: end; gap: 36px; color: #fff; text-shadow: 0 1px 5px #000, 0 2px 14px #000;
-    max-height: calc(100dvh - 110px); overflow: auto;
+    position: absolute;
+    z-index: 5;
+    bottom: max(26px, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 300px minmax(240px, 1fr) 180px;
+    align-items: end;
+    gap: 36px;
+    color: #fff;
+    text-shadow: 0 1px 5px #000, 0 2px 14px #000;
+    max-height: calc(100dvh - 110px);
+    overflow: auto;
     padding: 6px max(24px, env(safe-area-inset-right)) 6px max(24px, env(safe-area-inset-left));
 }
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > #fullscreenTemperatures,
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .overlay,
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .print-control-panel {
+
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>#fullscreenTemperatures,
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>.overlay,
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>.print-control-panel {
     position: relative;
     isolation: isolate;
 }
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > #fullscreenTemperatures::before,
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .overlay::before,
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .print-control-panel::before {
+
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>#fullscreenTemperatures::before,
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>.overlay::before,
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>.print-control-panel::before {
     content: '';
     position: absolute;
     inset: -6px;
@@ -1150,91 +1517,364 @@ select {
     border: 1px solid rgba(255, 255, 255, .08);
     pointer-events: none;
 }
+
 .shell:fullscreen .fullscreen-dock .overlay,
 .shell:fullscreen .fullscreen-dock .print-control-panel {
-    position: relative; inset: auto; width: auto; max-width: none; max-height: none;
-    margin: 0; padding: 0; transform: none; overflow: visible;
-    background: transparent; border: 0; box-shadow: none; backdrop-filter: none;
+    position: relative;
+    inset: auto;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    transform: none;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
 }
+
 .shell:fullscreen .fullscreen-dock #statsPanelContent,
-.shell:fullscreen .fullscreen-dock #controlsPanelContent { display: block; padding: 0; max-height: none; overflow: visible; }
-.shell:fullscreen .fullscreen-dock .fullscreen-collapsed > #statsPanelContent,
-.shell:fullscreen .fullscreen-dock .fullscreen-collapsed > #controlsPanelContent { display: none; }
-.shell:fullscreen .fullscreen-dock .panel-toggle:not([hidden]) { inset: 0 0 auto auto; width: 28px; height: 24px; min-height: 24px; padding: 0; }
-.shell:fullscreen .fullscreen-dock .panel-toggle::after { content: none; }
-.shell:fullscreen .fullscreen-dock .panel-toggle::before { left: 50%; right: auto; transform: rotate(135deg); }
-.shell:fullscreen .fullscreen-dock .panel-toggle[aria-expanded="false"]::before { transform: rotate(-45deg); }
+.shell:fullscreen .fullscreen-dock #controlsPanelContent {
+    display: block;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
+}
+
+.shell:fullscreen .fullscreen-dock .fullscreen-collapsed>#statsPanelContent,
+.shell:fullscreen .fullscreen-dock .fullscreen-collapsed>#controlsPanelContent {
+    display: none;
+}
+
+.shell:fullscreen .fullscreen-dock .panel-toggle:not([hidden]) {
+    inset: 0 0 auto auto;
+    width: 28px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+}
+
+.shell:fullscreen .fullscreen-dock .panel-toggle::after {
+    content: none;
+}
+
+.shell:fullscreen .fullscreen-dock .panel-toggle::before {
+    left: 50%;
+    right: auto;
+    transform: rotate(135deg);
+}
+
+.shell:fullscreen .fullscreen-dock .panel-toggle[aria-expanded="false"]::before {
+    transform: rotate(-45deg);
+}
+
 .shell:fullscreen .fullscreen-dock #temperaturesPanel,
-.shell:fullscreen .fullscreen-dock .overlay-heading { display: none; }
-.shell:fullscreen .fullscreen-dock .job-title { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 16px; }
-.shell:fullscreen .fullscreen-dock .details { flex-wrap: wrap; gap: 6px 12px; color: #e2e8f0; font-size: .75rem; }
-.shell:fullscreen .fullscreen-dock .track { height: 5px; margin: 10px 0 12px; background: #ffffff30; }
-.shell:fullscreen .fullscreen-dock .fill { box-shadow: 0 0 12px #43d9a355; }
-.shell:fullscreen .fullscreen-dock .print-controls { background: transparent; border: 0; padding: 0; gap: 10px; }
-.shell:fullscreen .fullscreen-dock .print-controls button { background: transparent; border: 1px solid #ffffff55; border-radius: 50%; width: 48px; height: 48px; padding: 12px; }
-.shell:fullscreen .fullscreen-dock .print-controls button:hover:enabled { border-color: var(--accent); color: var(--accent); }
-.shell:fullscreen .fullscreen-dock .device-panel { margin: 0; border: 0; background: transparent; }
-.shell:fullscreen .fullscreen-dock .device-panel > summary,
-.shell:fullscreen .fullscreen-dock .device-hint { display: none; }
-.shell:fullscreen .fullscreen-dock #deviceControlRows { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
-.shell:fullscreen .fullscreen-dock .heater-control-row { grid-column: span 3; margin: 0; }
-.shell:fullscreen .fullscreen-dock .fan-control-row { grid-column: span 2; margin: 0; }
-.shell:fullscreen .fullscreen-dock .temperature-gauge { display: grid; position: relative; width: 120px; height: 100px; margin: 0 auto; text-align: center; }
-.temperature-gauge svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke-width: 4; stroke-linecap: round; }
-.gauge-track { stroke: #ffffff30; }
-.gauge-arc { stroke: #f6b76a; transition: stroke-dashoffset .6s ease; }
-.heater-control-row:nth-child(2) .gauge-arc { stroke: #69daca; }
-.gauge-value { margin-top: 32px; font-size: 26px; font-weight: 600; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
-.gauge-name { position: absolute; bottom: 8px; left: 0; right: 0; font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: #e2e8f0; }
-.shell:fullscreen .fullscreen-dock .device-control-row label { font-size: 10px; color: #e2e8f0; flex-wrap: wrap; gap: 2px; }
-.shell:fullscreen .fullscreen-dock .heater-control-row label { justify-content: center; font-size: 0; }
-.shell:fullscreen .fullscreen-dock .heater-control-row label span { font-size: 10px; color: #e2e8f0; }
-.shell:fullscreen .fullscreen-dock .fan-control-row label span { display: none; }
-.shell:fullscreen .fullscreen-dock .device-control-inputs { gap: 3px; flex-wrap: wrap; }
+.shell:fullscreen .fullscreen-dock .overlay-heading {
+    display: none;
+}
+
+.shell:fullscreen .fullscreen-dock .job-title {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 16px;
+}
+
+.shell:fullscreen .fullscreen-dock .details {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: #e2e8f0;
+    font-size: .75rem;
+}
+
+.shell:fullscreen .fullscreen-dock .track {
+    height: 5px;
+    margin: 10px 0 12px;
+    background: #ffffff30;
+}
+
+.shell:fullscreen .fullscreen-dock .fill {
+    box-shadow: 0 0 12px #43d9a355;
+}
+
+.shell:fullscreen .fullscreen-dock .print-controls {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    gap: 10px;
+}
+
+.shell:fullscreen .fullscreen-dock .print-controls button {
+    background: transparent;
+    border: 1px solid #ffffff55;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+}
+
+.shell:fullscreen .fullscreen-dock .print-controls button:hover:enabled {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.shell:fullscreen .fullscreen-dock .device-panel {
+    margin: 0;
+    border: 0;
+    background: transparent;
+}
+
+.shell:fullscreen .fullscreen-dock .device-panel>summary,
+.shell:fullscreen .fullscreen-dock .device-hint {
+    display: none;
+}
+
+.shell:fullscreen .fullscreen-dock #deviceControlRows {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.shell:fullscreen .fullscreen-dock .heater-control-row {
+    grid-column: span 3;
+    margin: 0;
+}
+
+.shell:fullscreen .fullscreen-dock .fan-control-row {
+    grid-column: span 2;
+    margin: 0;
+}
+
+.shell:fullscreen .fullscreen-dock .temperature-gauge {
+    display: grid;
+    position: relative;
+    width: 120px;
+    height: 100px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.temperature-gauge svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.gauge-track {
+    stroke: #ffffff30;
+}
+
+.gauge-arc {
+    stroke: #f6b76a;
+    transition: stroke-dashoffset .6s ease;
+}
+
+.heater-control-row:nth-child(2) .gauge-arc {
+    stroke: #69daca;
+}
+
+.gauge-value {
+    margin-top: 32px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -.06em;
+    font-variant-numeric: tabular-nums;
+}
+
+.gauge-name {
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: #e2e8f0;
+}
+
+.shell:fullscreen .fullscreen-dock .device-control-row label {
+    font-size: 10px;
+    color: #e2e8f0;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.shell:fullscreen .fullscreen-dock .heater-control-row label {
+    justify-content: center;
+    font-size: 0;
+}
+
+.shell:fullscreen .fullscreen-dock .heater-control-row label span {
+    font-size: 10px;
+    color: #e2e8f0;
+}
+
+.shell:fullscreen .fullscreen-dock .fan-control-row label span {
+    display: none;
+}
+
+.shell:fullscreen .fullscreen-dock .device-control-inputs {
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
 .shell:fullscreen .fullscreen-dock .device-control-inputs input,
-.shell:fullscreen .fullscreen-dock .device-control-inputs button { background: transparent; border: 1px solid #ffffff40; border-radius: 6px; color: #fff; min-height: 30px; font-size: 11px; padding: 4px; text-shadow: 0 1px 4px #000; }
-.shell:fullscreen .fullscreen-dock .device-control-inputs input { min-width: 32px; }
-.shell:fullscreen .fullscreen-dock .device-control-inputs > span { font-size: 10px; }
-.shell:fullscreen .fullscreen-dock .print-control-status { font-size: 10px; color: #e2e8f0; margin: 8px 0 0; }
-.shell:fullscreen .fullscreen-dock .print-control-status:empty { display: none; }
+.shell:fullscreen .fullscreen-dock .device-control-inputs button {
+    background: transparent;
+    border: 1px solid #ffffff40;
+    border-radius: 6px;
+    color: #fff;
+    min-height: 30px;
+    font-size: 11px;
+    padding: 4px;
+    text-shadow: 0 1px 4px #000;
+}
+
+.shell:fullscreen .fullscreen-dock .device-control-inputs input {
+    min-width: 32px;
+}
+
+.shell:fullscreen .fullscreen-dock .device-control-inputs>span {
+    font-size: 10px;
+}
+
+.shell:fullscreen .fullscreen-dock .print-control-status {
+    font-size: 10px;
+    color: #e2e8f0;
+    margin: 8px 0 0;
+}
+
+.shell:fullscreen .fullscreen-dock .print-control-status:empty {
+    display: none;
+}
+
 @media (max-width: 900px) {
-    .shell:fullscreen .fullscreen-dock { grid-template-columns: 240px minmax(180px, 1fr) 140px; gap: 16px; bottom: 12px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 24px); padding: 6px; }
-    .shell:fullscreen .fullscreen-dock .print-controls { gap: 5px; }
-    .shell:fullscreen .fullscreen-dock .print-controls button { width: 42px; height: 42px; padding: 10px; }
+    .shell:fullscreen .fullscreen-dock {
+        grid-template-columns: 240px minmax(180px, 1fr) 140px;
+        gap: 16px;
+        bottom: 12px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: calc(100% - 24px);
+        padding: 6px;
+    }
+
+    .shell:fullscreen .fullscreen-dock .print-controls {
+        gap: 5px;
+    }
+
+    .shell:fullscreen .fullscreen-dock .print-controls button {
+        width: 42px;
+        height: 42px;
+        padding: 10px;
+    }
 }
+
 @media (max-width: 620px) {
-    .shell:fullscreen .fullscreen-dock { grid-template-columns: minmax(0, 1fr) 140px; gap: 12px; }
-    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures { grid-column: 1 / -1; width: min(300px, 100%); }
-    .shell:fullscreen .fullscreen-dock .overlay { grid-column: 1; }
-    .shell:fullscreen .fullscreen-dock .print-control-panel { grid-column: 2; }
+    .shell:fullscreen .fullscreen-dock {
+        grid-template-columns: minmax(0, 1fr) 140px;
+        gap: 12px;
+    }
+
+    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures {
+        grid-column: 1 / -1;
+        width: min(300px, 100%);
+    }
+
+    .shell:fullscreen .fullscreen-dock .overlay {
+        grid-column: 1;
+    }
+
+    .shell:fullscreen .fullscreen-dock .print-control-panel {
+        grid-column: 2;
+    }
 }
-@media (prefers-reduced-motion: reduce) { .gauge-arc { transition: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .gauge-arc {
+        transition: none;
+    }
+}
+
 /* Preserve panel widths and share the remaining space between the panels. */
 @media (min-width: 901px) {
     .shell:fullscreen .fullscreen-dock {
         grid-template-columns: 300px minmax(0, calc(100% - 672px)) 180px;
         justify-content: space-between;
     }
-    .shell:fullscreen .fullscreen-dock .print-control-panel { width: 180px; justify-self: start; }
+
+    .shell:fullscreen .fullscreen-dock .print-control-panel {
+        width: 180px;
+        justify-self: start;
+    }
 }
+
 @media (min-width: 741px) and (max-width: 900px) {
     .shell:fullscreen .fullscreen-dock {
         grid-template-columns: 240px minmax(180px, calc(100% - 512px)) 140px;
         justify-content: space-between;
     }
-    .shell:fullscreen .fullscreen-dock .print-control-panel { width: 140px; justify-self: start; }
+
+    .shell:fullscreen .fullscreen-dock .print-control-panel {
+        width: 140px;
+        justify-self: start;
+    }
 }
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock .print-controls { justify-content: center; }
-.shell.desktop-fullscreen:fullscreen .fullscreen-dock > .overlay { min-width: 0; padding: 8px 12px; }
+
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock .print-controls {
+    justify-content: center;
+}
+
+.shell.desktop-fullscreen:fullscreen .fullscreen-dock>.overlay {
+    min-width: 0;
+    padding: 8px 12px;
+}
+
 @media (max-width: 740px) {
-    .shell:fullscreen .fullscreen-dock { grid-template-columns: minmax(0, 1fr) 140px; gap: 12px; }
-    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures { grid-column: 1 / -1; width: min(300px, 100%); }
-    .shell:fullscreen .fullscreen-dock .overlay { grid-column: 1; }
-    .shell:fullscreen .fullscreen-dock .print-control-panel { grid-column: 2; }
+    .shell:fullscreen .fullscreen-dock {
+        grid-template-columns: minmax(0, 1fr) 140px;
+        gap: 12px;
+    }
+
+    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures {
+        grid-column: 1 / -1;
+        width: min(300px, 100%);
+    }
+
+    .shell:fullscreen .fullscreen-dock .overlay {
+        grid-column: 1;
+    }
+
+    .shell:fullscreen .fullscreen-dock .print-control-panel {
+        grid-column: 2;
+    }
 }
+
 @media (min-width: 741px) {
-    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures { grid-column: 1; grid-row: 1; }
-    .shell:fullscreen .fullscreen-dock .overlay { grid-column: 2; grid-row: 1; }
-    .shell:fullscreen .fullscreen-dock .print-control-panel { grid-column: 3; grid-row: 1; }
+    .shell:fullscreen .fullscreen-dock #fullscreenTemperatures {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .shell:fullscreen .fullscreen-dock .overlay {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .shell:fullscreen .fullscreen-dock .print-control-panel {
+        grid-column: 3;
+        grid-row: 1;
+    }
 }
-.shell:fullscreen .fullscreen-dock [hidden] { display: none; }
+
+.shell:fullscreen .fullscreen-dock [hidden] {
+    display: none;
+}
