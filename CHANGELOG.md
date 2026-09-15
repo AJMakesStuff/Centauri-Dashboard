@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.4.0 (Current)
+## 0.4.1 (Current)
+
+### Changed
+
+- Minor text change in settings panel
+
+## 0.4.0
 
 ### Added
 
