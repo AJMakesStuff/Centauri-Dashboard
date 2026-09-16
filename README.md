@@ -60,3 +60,7 @@ Made by A.J. Richardson. Licensed under [MIT](LICENSE).
 CC2 references: [Elegoo SDK](https://github.com/elegooofficial/elegoo-link/tree/main/src/lan/adapters/elegoo_fdm_cc2) and [protocol notes](https://github.com/bjan/pycentauri/blob/main/docs/PROTOCOL.md#centauri-carbon-2-cc2-protocol-notes).
 
 Includes [MQTT.js](https://github.com/mqttjs/MQTT.js) 5.14.1; its [MIT license](vendor/MQTT-LICENSE.md) is bundled locally.
+
+## Disclaimer
+
+This project was developed through a combination of human-written code and AI-assisted development.
