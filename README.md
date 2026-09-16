@@ -2,7 +2,7 @@
 
 A local browser dashboard for Centauri Carbon (CC1) and Centauri Carbon 2 (CC2) printers. View live cameras, print progress, layers, time estimates, and temperatures; control lights, fans, temperatures, and pause/stop/resume. Monitor either printer or both together.
 
-Plain HTML, CSS, and JavaScript—no build step or cloud account required. File uploads, starting new prints, and Canvas tray management are not supported. CC2 support has been tested with simulated messages but has not yet been verified on a physical printer.
+Plain HTML, CSS, and JavaScript—no build step or cloud account required. File uploads, starting new prints, and Canvas tray management are currently in development. CC2 support has been tested with simulated messages and has been verified on a physical printer.
 
 ![Dashboard screenshot](screenshots/1.png)
 ## Setup
