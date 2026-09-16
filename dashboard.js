@@ -390,7 +390,7 @@ function startSession(active, cc2) {
   heartbeatTimer = setInterval(() => { if (socket === active && active.readyState === WebSocket.OPEN) active.send('ping'); }, 15000);
 }
 function stopConnection(preserveReplay = false) {
-  if (!preserveReplay && typeof window !== 'undefined') window.printReplay?.update(false, '');
+  if (!preserveReplay && typeof window !== 'undefined') window.printReplay?.detach?.();
   resetPrintControls(false);
   clearTimeout(reconnectTimer); clearTimeout(discoveryTimer); clearInterval(heartbeatTimer); heartbeatTimer = undefined;
   connectionVersion++;

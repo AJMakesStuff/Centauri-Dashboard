@@ -42,7 +42,9 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Invalid replay ID')
             if not isinstance(data.get('active'), bool):
                 raise ValueError('Invalid recording state')
-            payload = replay.update(data['id'], data.get('url', ''), data['active'], data.get('job', ''))
+            if not isinstance(data.get('delete', False), bool):
+                raise ValueError('Invalid delete action')
+            payload = replay.update(data['id'], data.get('url', ''), data['active'], data.get('job', ''), data.get('delete', False))
             self.reply(json.dumps(payload).encode(), 'application/json')
         except (ValueError, OSError, TypeError) as error:
             self.reply(json.dumps({'error': str(error)}).encode(), 'application/json', 400)

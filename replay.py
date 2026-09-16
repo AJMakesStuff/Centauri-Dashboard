@@ -31,12 +31,15 @@ class Recording:
         self.updated = time.monotonic()
         self.started = self.updated
         self.closed = False
+        self.completed = False
+        self.capture_stop = threading.Event()
         self.error = ''
         self.guard = threading.RLock()
         self.target = target
 
     def close(self):
         with self.guard:
+            self.capture_stop.set()
             self.closed = True
             self.frames.clear()
             self.file.close()
@@ -60,8 +63,8 @@ class Recording:
             self.file.seek(offset)
             return self.file.read(size)
 
-    def capture(self):
-        while not self.closed:
+    def capture(self, capture_stop):
+        while not capture_stop.is_set():
             connection = http.client.HTTPConnection(self.target[0], self.target[1], timeout=10)
             try:
                 connection.request('GET', self.target[2])
@@ -70,7 +73,7 @@ class Recording:
                     raise OSError('Camera refused connection')
                 buffer = b''
                 last = 0
-                while not self.closed:
+                while not capture_stop.is_set():
                     chunk = response.read1(65536)
                     if not chunk:
                         raise OSError('Camera stream ended')
@@ -83,53 +86,71 @@ class Recording:
                         frame, buffer = buffer[start:end + 2], buffer[end + 2:]
                         now = time.monotonic()
                         if now - last >= 0.5:
-                            if not self.append(frame, now):
-                                return
+                            with self.guard:
+                                if capture_stop.is_set() or not self.append(frame, now):
+                                    return
                             self.error = ''
                             last = now
                     if len(buffer) > 8 * 1024**2:
                         raise OSError('Camera did not provide valid MJPEG frames')
             except (OSError, http.client.HTTPException):
-                self.error = 'Camera unavailable; retrying local recording.'
+                with self.guard:
+                    if capture_stop.is_set():
+                        return
+                    self.error = 'Camera unavailable; retrying local recording.'
             finally:
                 connection.close()
             for _ in range(20):
-                if self.closed:
+                if capture_stop.is_set():
                     return
                 time.sleep(0.1)
 
 
-def update(token, url, active, job=''):
+def update(token, url, active, job='', delete=False):
     with lock:
-        if not active:
-            recording = sessions.pop(token, None)
+        recording = sessions.get(token)
+        if delete:
             if recording:
                 recording.close()
-            return {'frames': 0}
-        recording = sessions.get(token)
-        if recording is not None and (recording.url != url or recording.job != job):
+            return {'frames': 0, 'recording': False}
+        if active and recording is not None and (recording.completed or recording.url != url or recording.job != job):
             sessions.pop(token).close()
             recording = None
-        if recording is None:
-            if len(sessions) >= 4:
+        if recording is None and active:
+            if sum(not item.closed for item in sessions.values()) >= 4:
                 raise ValueError('Too many local replay sessions')
             recording = Recording(camera_target(url))
             recording.url = url
             recording.job = job
             sessions[token] = recording
-            threading.Thread(target=recording.capture, daemon=True).start()
+            threading.Thread(target=recording.capture, args=(recording.capture_stop,), daemon=True).start()
+        if recording is None:
+            return {'frames': 0, 'recording': False}
         recording.updated = time.monotonic()
         with recording.guard:
-            return {'frames': len(recording.frames), 'seconds': recording.frames[-1][2] if recording.frames else 0, 'error': recording.error}
+            if not active:
+                recording.completed = True
+                recording.capture_stop.set()
+                recording.error = ''
+            elif recording.capture_stop.is_set() and not recording.closed:
+                recording.capture_stop = threading.Event()
+                threading.Thread(target=recording.capture, args=(recording.capture_stop,), daemon=True).start()
+            return {'frames': len(recording.frames), 'seconds': recording.frames[-1][2] if recording.frames else 0,
+                    'error': recording.error, 'recording': active and not recording.closed}
+
+
+def expire_captures():
+    with lock:
+        for recording in sessions.values():
+            if time.monotonic() - recording.updated > 90:
+                with recording.guard:
+                    recording.capture_stop.set()
 
 
 def reap():
     while True:
         time.sleep(5)
-        with lock:
-            for token, recording in list(sessions.items()):
-                if time.monotonic() - recording.updated > 90:
-                    sessions.pop(token).close()
+        expire_captures()
 
 
 threading.Thread(target=reap, daemon=True).start()

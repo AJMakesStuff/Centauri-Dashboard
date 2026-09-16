@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.5.0 (Current)
+## 0.5.1 (Current)
+
+### Added
+
+- Retainment of local recording until next print
+
+## 0.5.0
 
 ### Added
 

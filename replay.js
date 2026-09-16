@@ -1,4 +1,4 @@
-/* Keep the recording identity across reloads; the service expires abandoned sessions. */
+/* Keep the recording identity across reloads and retain footage until explicitly replaced. */
 (() => {
   const settings = JSON.parse(localStorage.getItem('dashboard') || '{}');
   const model = new URLSearchParams(location.search).get('printer') || settings.printerModel || 'cc1';
@@ -6,10 +6,15 @@
     const storageKey = `printReplay:${printerModel}`;
     let value;
     try { value = sessionStorage.getItem(storageKey); } catch { /* Storage may be disabled. */ }
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (/^[a-f0-9]{32}$/.test(stored || '')) value = stored;
+    } catch { /* Storage may be disabled. */ }
     if (!/^[a-f0-9]{32}$/.test(value || '')) {
       value = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
       try { sessionStorage.setItem(storageKey, value); } catch { /* Replay still works without reload recovery. */ }
     }
+    try { localStorage.setItem(storageKey, value); } catch { /* Fall back to tab storage. */ }
     return value;
   }
   let selectedModel = model, token = tokenFor(model);
@@ -19,6 +24,7 @@
   const status = document.getElementById('replayStatus');
   const play = document.getElementById('replayPlay');
   const live = document.getElementById('replayLive');
+  const deleteButton = document.getElementById('replayDelete');
   const recordingIndicator = document.getElementById('replayRecording');
   const timeDisplay = document.getElementById('replayTime');
   let currentSeconds = null, totalSeconds = 0, timeRequest = 0;
@@ -31,6 +37,7 @@
   const showTime = () => { timeDisplay.textContent = `${currentSeconds === null ? '—' : clockTime(currentSeconds)} / ${clockTime(totalSeconds)}`; };
   let lastRecordingUpdate = 0;
   let active = false, url = '', job = '', busy = false, revision = 0, frames = 0, playing = false, lastStatus = 0;
+  let hasStatus = false, deletePending = false;
   const draw = async () => {
     const request = ++timeRequest, version = revision;
     const query = `id=${token}&index=${slider.value}`;
@@ -60,36 +67,56 @@
     if (busy) return;
     busy = true;
     const version = revision;
+    const deleting = deletePending;
     try {
-      const response = await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: token, url, active, job }), signal: AbortSignal.timeout(15000) });
+      const response = await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: token, url, active, job, delete: deleting }), signal: AbortSignal.timeout(15000) });
       const data = await response.json();
       if (version !== revision) return;
       if (!response.ok) throw new Error(data.error || 'Replay unavailable');
-      recordingIndicator.hidden = !active || Boolean(data.error) || data.frames <= frames;
+      if (deleting) deletePending = false;
+      recordingIndicator.hidden = !active || data.recording === false || Boolean(data.error) || data.frames <= frames;
       if (!recordingIndicator.hidden) lastRecordingUpdate = Date.now();
       frames = data.frames;
+      panel.hidden = !active && !frames;
+      deleteButton.hidden = active || !frames;
+      deleteButton.disabled = false;
+      if (!frames) { ++timeRequest; image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); }
       totalSeconds = data.seconds || 0;
       showTime();
       slider.max = Math.max(0, frames - 1);
       slider.disabled = play.disabled = !frames;
-      status.textContent = data.error || `Local replay recording - ${recordedDuration(data.seconds)} recorded`;
+      status.textContent = data.error || (data.recording === false && active ? 'Replay deleted for this print' : `${active ? 'Local replay recording' : 'Local replay available'} - ${recordedDuration(data.seconds)} recorded`);
     } catch (error) {
       if (version === revision) recordingIndicator.hidden = true;
-      if (version === revision && active) status.textContent = `Replay unavailable. Use Docker with an HTTP MJPEG camera. ${error.message}`;
-    } finally { busy = false; if (version !== revision) sync(); }
+      if (version === revision) { deletePending = false; deleteButton.disabled = false; status.textContent = `Replay unavailable. ${error.message}`; }
+    } finally { busy = false; if (version !== revision && hasStatus) sync(); }
   }
   window.printReplay = {
+    detach() { ++revision; ++timeRequest; lastStatus = 0; hasStatus = false; active = false; stop(); panel.hidden = true; recordingIndicator.hidden = true; },
     update(isActive, cameraUrl, jobName = '', printerModel = selectedModel) {
-      if (printerModel !== selectedModel) { token = tokenFor(printerModel); selectedModel = printerModel; }
+      const modelChanged = printerModel !== selectedModel;
+      if (modelChanged) { token = tokenFor(printerModel); selectedModel = printerModel; deletePending = false; }
       lastStatus = Date.now();
-      const changed = url !== cameraUrl || job !== jobName; url = cameraUrl; job = jobName;
-      if (active === isActive && !changed) return;
+      const changed = modelChanged || (isActive && (url !== cameraUrl || job !== jobName));
+      const starting = isActive && !active;
+      if (starting || changed) deletePending = false;
+      url = cameraUrl; job = jobName;
+      if (hasStatus && active === isActive && !changed) return;
+      hasStatus = true;
       active = isActive; revision++;
-      panel.hidden = !active;
+      if (active) deleteButton.hidden = true;
+      panel.hidden = !active && !frames;
       recordingIndicator.hidden = true;
-      if (!active || changed) { image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
+      if (starting || changed) { image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
       sync();
     }
+  };
+  deleteButton.onclick = () => {
+    if (active || !frames) return;
+    deletePending = true; deleteButton.disabled = true; ++revision; ++timeRequest;
+    image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true;
+    stop(); image.removeAttribute('src'); recordingIndicator.hidden = true;
+    sync();
   };
   slider.addEventListener('input', () => { draw(); stop(); });
   play.onclick = () => {
@@ -103,12 +130,12 @@
   live.onclick = () => { ++timeRequest; image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); };
   setInterval(() => {
     if (Date.now() - lastRecordingUpdate > 15000) recordingIndicator.hidden = true;
-    if (active && Date.now() - lastStatus < 60000) sync();
+    if (hasStatus && Date.now() - lastStatus < 60000) sync();
   }, 5000);
   setInterval(() => {
     if (!playing || !frames || !image.complete) return;
     if (Number(slider.value) >= frames - 1) return stop();
     slider.value = Number(slider.value) + 1; draw();
   }, 500);
-  // Unloading may be a refresh. Leave deletion to a confirmed job end or lease expiry.
+  // Unloading may be a refresh. The server stops stale capture but retains footage.
 })();

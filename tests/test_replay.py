@@ -16,9 +16,9 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(recording.frame(0), b'first')
         self.assertEqual(recording.frame(1), b'second')
         replay.sessions['test'] = recording
-        replay.update('test', '', False)
+        replay.update('test', '', False, delete=True)
         self.assertTrue(recording.file.closed)
-        self.assertNotIn('test', replay.sessions)
+        self.assertEqual(recording.frames, [])
         self.assertFalse(recording.append(b'late', 3))
 
     def test_limit_preserves_existing_footage(self):
@@ -42,7 +42,7 @@ class ReplayTests(unittest.TestCase):
 
     @patch('replay.Recording.capture')
     @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
-    def test_reconnect_retains_footage_and_end_deletes_it(self, target, capture):
+    def test_reconnect_and_completion_retain_footage(self, target, capture):
         replay.update('tab', 'http://printer/video', True, 'part')
         original = replay.sessions['tab']
         original.append(b'previous footage', original.started + 1)
@@ -51,5 +51,49 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result['frames'], 1)
         self.assertEqual(original.frame(0), b'previous footage')
         replay.update('tab', '', False)
-        self.assertTrue(original.file.closed)
-        self.assertNotIn('tab', replay.sessions)
+        self.assertFalse(original.file.closed)
+        self.assertTrue(original.capture_stop.is_set())
+        self.assertEqual(original.frame(0), b'previous footage')
+        original.updated = 0
+        replay.expire_captures()
+        self.assertFalse(original.file.closed)
+        restored = replay.update('tab', '', False)
+        self.assertEqual(restored['frames'], 1)
+        self.assertFalse(restored['recording'])
+
+    @patch('replay.Recording.capture')
+    @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
+    def test_same_filename_next_print_replaces_completed_replay(self, target, capture):
+        replay.update('tab', 'http://printer/video', True, 'part')
+        previous = replay.sessions['tab']
+        previous.append(b'old', previous.started)
+        replay.update('tab', '', False)
+        result = replay.update('tab', 'http://printer/video', True, 'part')
+        self.assertTrue(previous.file.closed)
+        self.assertEqual(result['frames'], 0)
+        self.assertIsNot(previous, replay.sessions['tab'])
+
+    @patch('replay.Recording.capture')
+    @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
+    def test_delete_during_print_does_not_restart_on_status_poll(self, target, capture):
+        replay.update('tab', 'http://printer/video', True, 'part')
+        previous = replay.sessions['tab']
+        replay.update('tab', '', True, delete=True)
+        result = replay.update('tab', 'http://printer/video', True, 'part')
+        self.assertTrue(previous.file.closed)
+        self.assertFalse(result['recording'])
+        replay.update('tab', '', False)
+        self.assertTrue(replay.update('tab', 'http://printer/video', True, 'part')['recording'])
+
+    @patch('replay.Recording.capture')
+    @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
+    def test_disconnect_stops_capture_without_deleting_and_can_resume(self, target, capture):
+        replay.update('tab', 'http://printer/video', True, 'part')
+        recording = replay.sessions['tab']
+        recording.append(b'kept', recording.started)
+        recording.updated = 0
+        replay.expire_captures()
+        self.assertTrue(recording.capture_stop.is_set())
+        result = replay.update('tab', 'http://printer/video', True, 'part')
+        self.assertEqual(result['frames'], 1)
+        self.assertFalse(recording.capture_stop.is_set())

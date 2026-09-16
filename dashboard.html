@@ -75,6 +75,7 @@
         <div class="replay-actions">
           <button id="replayPlay" type="button" disabled>View Replay</button>
           <button id="replayLive" type="button" hidden>Back to live</button>
+          <button id="replayDelete" type="button" hidden>Delete Replay</button>
         </div>
       </div>
       <img id="replayImage" alt="Recorded view of the current print" hidden />
@@ -82,7 +83,7 @@
         hidden />
       <div id="replayTime" class="replay-time" aria-label="Playback position and recorded duration" hidden>0:00 / 0:00
       </div>
-      <small>Temporary local recording · deleted when the print ends</small>
+      <small>Stored locally until the next print, manual deletion, or service restart.</small>
     </section>
     <section class="overlay" id="overlay">
       <button id="statsPanelToggle" class="panel-toggle stats-panel-toggle" type="button"

@@ -761,10 +761,11 @@ test('replay follows confirmed print lifecycle and ignores connection resets', (
   assert.equal(t.run('replayCalls.at(-1)[0]'), false);
 });
 
-test('refresh reconnect can preserve replay while explicit disconnect still clears it', () => {
+test('disconnect detaches the view without ending or deleting the replay', () => {
   const t = setup();
-  t.run('globalThis.window = { printReplay: { update() { globalThis.deletedReplay = true; } } }; globalThis.deletedReplay = false; stopConnection(true)');
+  t.run('globalThis.window = { printReplay: { update() { globalThis.deletedReplay = true; }, detach() { globalThis.detachedReplay = true; } } }; globalThis.deletedReplay = false; globalThis.detachedReplay = false; stopConnection(true)');
   assert.equal(t.run('deletedReplay'), false);
   t.run('stopConnection()');
-  assert.equal(t.run('deletedReplay'), true);
+  assert.equal(t.run('deletedReplay'), false);
+  assert.equal(t.run('detachedReplay'), true);
 });

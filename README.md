@@ -61,14 +61,18 @@ CC2 references: [Elegoo SDK](https://github.com/elegooofficial/elegoo-link/tree/
 
 Includes [MQTT.js](https://github.com/mqttjs/MQTT.js) 5.14.1; its [MIT license](vendor/MQTT-LICENSE.md) is bundled locally.
 
+## Disclaimer
+
+This project was developed through a combination of human-written code and AI-assisted development.
 ## Local print replay
 
 While the dashboard is open during an active print, the Docker service records the HTTP MJPEG camera locally at up to 2 frames per second. Select View Replay below the live camera to open captured footage paused, then select Play or use the slider while recording continues. Back to live closes the replay image; the live camera remains available above it. Pausing a print keeps recording.
 
-Footage is stored in a temporary file on the machine running Docker, without cloud access. It starts when this dashboard detects the print, so footage from before the dashboard was opened is unavailable. Completion, cancellation, or an idle print report deletes the recording. Refreshing the page reconnects to the same recording in that tab, provided printer status resumes before its 90-second server lease expires. Closing the page leaves the recording to expire automatically; if the browser or printer disconnects, the recording expires after status updates stop (within approximately 155 seconds). Restarting the service also removes temporary recordings. Each dashboard view has its own recording, including in Both view.
+Footage is stored in a temporary file on the machine running Docker, without cloud access. It starts when this dashboard detects the print, so footage from before the dashboard was opened is unavailable. Completion, cancellation, or an idle print report stops capture and keeps the replay available. The next detected print replaces it, including another print with the same filename. Delete Replay is available after the print ends and removes footage immediately. Stopping or restarting the discovery Docker service removes all recordings.
+
+Refreshing or reopening the dashboard in the same browser recovers the replay when printer status arrives. Each printer model has its own replay identity stored in browser storage, including in Both view. If the browser or printer disconnects, capture stops after status updates stop (within approximately 155 seconds), but existing footage is retained. Reconnecting during the same print resumes capture. Print transitions that happen entirely while disconnected cannot be reliably distinguished when the filename is unchanged.
 
 Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
 
-## Disclaimer
 
-This project was developed through a combination of human-written code and AI-assisted development.
+
