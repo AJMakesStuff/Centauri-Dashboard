@@ -2,7 +2,13 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.5.1 (Current)
+## 0.5.2 (Current)
+
+### Added
+
+- Added replay panel to fullscreen view
+
+## 0.5.1
 
 ### Added
 

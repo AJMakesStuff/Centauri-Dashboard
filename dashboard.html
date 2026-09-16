@@ -37,6 +37,8 @@
             class="recording-dot" aria-hidden="true"></span>REC</span>
       </div>
       <div class="print-control-panel" id="printControlPanel">
+        <button id="fullscreenReplayButton" class="fullscreen-replay-button" type="button" aria-controls="replayPanel"
+          aria-expanded="false" disabled>View Replay</button>
         <button id="controlsPanelToggle" class="panel-toggle controls-panel-toggle" type="button"
           aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel"
           title="Hide controls panel" hidden>›</button>
@@ -76,6 +78,8 @@
           <button id="replayPlay" type="button" disabled>View Replay</button>
           <button id="replayLive" type="button" hidden>Back to live</button>
           <button id="replayDelete" type="button" hidden>Delete Replay</button>
+          <button id="fullscreenReplayClose" class="fullscreen-replay-close" type="button"
+            aria-label="Close replay panel">Close</button>
         </div>
       </div>
       <img id="replayImage" alt="Recorded view of the current print" hidden />

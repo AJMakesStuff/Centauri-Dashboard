@@ -25,6 +25,28 @@
   const play = document.getElementById('replayPlay');
   const live = document.getElementById('replayLive');
   const deleteButton = document.getElementById('replayDelete');
+  const fullscreenButton = document.getElementById('fullscreenReplayButton');
+  const fullscreenClose = document.getElementById('fullscreenReplayClose');
+  const buttonIcons = {
+    view: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    play: '<path d="m8 5 11 7-11 7Z"/>',
+    pause: '<path d="M8 5v14M16 5v14"/>',
+    live: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/><circle cx="12" cy="10.5" r="2"/>',
+    delete: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>',
+    close: '<path d="m6 6 12 12M6 18 18 6"/>'
+  };
+  const setButtonIcon = (button, icon, label) => {
+    button.classList.toggle('replay-view-button', icon === 'view');
+    if (icon === 'view') button.textContent = 'View Replay';
+    else button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${buttonIcons[icon]}</svg>`;
+    button.setAttribute('aria-label', label);
+    button.title = label;
+  };
+  setButtonIcon(play, 'view', 'View replay');
+  setButtonIcon(live, 'live', 'Back to live');
+  setButtonIcon(deleteButton, 'delete', 'Delete replay');
+  setButtonIcon(fullscreenButton, 'view', 'View replay');
+  setButtonIcon(fullscreenClose, 'close', 'Close replay panel');
   const recordingIndicator = document.getElementById('replayRecording');
   const timeDisplay = document.getElementById('replayTime');
   let currentSeconds = null, totalSeconds = 0, timeRequest = 0;
@@ -52,7 +74,24 @@
       currentSeconds = data.seconds; showTime();
     } catch { /* Keep an unavailable timestamp rather than estimating across camera gaps. */ }
   };
-  const stop = () => { playing = false; play.textContent = image.hidden ? 'View Replay' : 'Play'; };
+  const stop = () => { playing = false; setButtonIcon(play, image.hidden ? 'view' : 'play', image.hidden ? 'View replay' : 'Play replay'); };
+  const closeFullscreenReplay = () => {
+    ++timeRequest;
+    image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true;
+    image.removeAttribute('src');
+    panel.classList.remove('fullscreen-replay-open');
+    fullscreenButton.setAttribute('aria-expanded', 'false');
+    stop();
+  };
+  fullscreenButton.onclick = () => {
+    if (!frames) return;
+    panel.classList.add('fullscreen-replay-open');
+    fullscreenButton.setAttribute('aria-expanded', 'true');
+    draw(); stop();
+    fullscreenClose.focus();
+  };
+  fullscreenClose.onclick = () => { closeFullscreenReplay(); fullscreenButton.focus(); };
+  addEventListener('fullscreenchange', closeFullscreenReplay);
   const recordedDuration = seconds => {
     const total = Math.max(0, Math.floor(Number(seconds) || 0));
     const units = [['day', 86400], ['hour', 3600], ['minute', 60], ['second', 1]];
@@ -77,6 +116,8 @@
       recordingIndicator.hidden = !active || data.recording === false || Boolean(data.error) || data.frames <= frames;
       if (!recordingIndicator.hidden) lastRecordingUpdate = Date.now();
       frames = data.frames;
+      fullscreenButton.disabled = !frames;
+      if (!frames) closeFullscreenReplay();
       panel.hidden = !active && !frames;
       deleteButton.hidden = active || !frames;
       deleteButton.disabled = false;
@@ -92,7 +133,7 @@
     } finally { busy = false; if (version !== revision && hasStatus) sync(); }
   }
   window.printReplay = {
-    detach() { ++revision; ++timeRequest; lastStatus = 0; hasStatus = false; active = false; stop(); panel.hidden = true; recordingIndicator.hidden = true; },
+    detach() { ++revision; ++timeRequest; lastStatus = 0; hasStatus = false; active = false; closeFullscreenReplay(); fullscreenButton.disabled = true; panel.hidden = true; recordingIndicator.hidden = true; },
     update(isActive, cameraUrl, jobName = '', printerModel = selectedModel) {
       const modelChanged = printerModel !== selectedModel;
       if (modelChanged) { token = tokenFor(printerModel); selectedModel = printerModel; deletePending = false; }
@@ -107,7 +148,7 @@
       if (active) deleteButton.hidden = true;
       panel.hidden = !active && !frames;
       recordingIndicator.hidden = true;
-      if (starting || changed) { image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
+      if (starting || changed) { closeFullscreenReplay(); fullscreenButton.disabled = true; image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
       sync();
     }
   };
@@ -123,7 +164,7 @@
     if (!frames) return;
     if (image.hidden) { draw(); stop(); return; }
     playing = !playing;
-    play.textContent = playing ? 'Pause' : 'Play';
+    setButtonIcon(play, playing ? 'pause' : 'play', playing ? 'Pause replay' : 'Play replay');
     if (playing && Number(slider.value) >= frames - 1) slider.value = 0;
     if (playing) draw();
   };

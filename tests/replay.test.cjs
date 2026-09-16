@@ -9,9 +9,21 @@ function view(store, search = '') {
     crypto: require('node:crypto').webcrypto, URLSearchParams, location: { search },
     localStorage: { getItem: () => JSON.stringify({ printerModel: 'cc1' }) },
     sessionStorage: { getItem: key => store.get(key), setItem: (key, value) => store.set(key, value) },
-    document: { getElementById(id) { if (!elements.has(id)) elements.set(id, { value: 0, removeAttribute() {}, addEventListener() {} }); return elements.get(id); } },
-    window: {}, setInterval() {}, addEventListener(name, fn) { events[name] = fn; },
-    AbortSignal, fetch: async (_, options) => { const body = JSON.parse(options.body); requests.push(body); return { ok: true, json: async () => ({ frames: body.delete ? 0 : 4, seconds: 2, recording: body.active && !body.delete }) }; }
+    document: {
+      getElementById(id) {
+        if (!elements.has(id)) {
+          const classes = new Set();
+          elements.set(id, {
+            value: 0, removeAttribute() { }, addEventListener() { }, focus() { },
+            setAttribute(name, value) { this[name] = value; },
+            classList: { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name), toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name) }
+          });
+        }
+        return elements.get(id);
+      }
+    },
+    window: {}, setInterval() { }, addEventListener(name, fn) { events[name] = fn; },
+    AbortSignal, fetch: async (_, options) => { const body = options.body ? JSON.parse(options.body) : {}; requests.push(body); return { ok: true, json: async () => ({ frames: body.delete ? 0 : 4, seconds: 2, recording: body.active && !body.delete }) }; }
   });
   vm.runInContext(source, context);
   return { update: (...args) => context.window.printReplay.update(...args), requests, events, elements };
@@ -59,4 +71,31 @@ test('Both view uses separate persistent identities for each printer', () => {
   const reload = view(storage, '?printer=cc2');
   reload.update(true, 'http://two/video', 'part');
   assert.equal(reload.requests[0].id, cc2.requests[0].id);
+});
+
+test('fullscreen replay opens paused and closes without discarding the recording', async () => {
+  const t = view(new Map());
+  t.update(true, 'http://printer/video', 'part');
+  await new Promise(setImmediate);
+  const button = t.elements.get('fullscreenReplayButton');
+  const panel = t.elements.get('replayPanel');
+  assert.equal(button.disabled, false);
+  button.onclick();
+  assert.equal(panel.classList.contains('fullscreen-replay-open'), true);
+  assert.equal(button['aria-expanded'], 'true');
+  assert.equal(t.elements.get('replayImage').hidden, false);
+  assert.equal(t.elements.get('replayPlay')['aria-label'], 'Play replay');
+  t.elements.get('fullscreenReplayClose').onclick();
+  assert.equal(panel.classList.contains('fullscreen-replay-open'), false);
+  assert.equal(button.disabled, false);
+  button.onclick();
+  t.events.fullscreenchange();
+  assert.equal(panel.classList.contains('fullscreen-replay-open'), false);
+  assert.equal(button['aria-expanded'], 'false');
+  assert.equal(t.elements.get('replayImage').hidden, true);
+  assert.equal(t.elements.get('replayTimeline').hidden, true);
+  assert.equal(t.elements.get('replayTime').hidden, true);
+  assert.equal(t.elements.get('replayPlay')['aria-label'], 'View replay');
+  assert.equal(panel.hidden, false);
+  assert.equal(t.requests.some(request => request.delete), false);
 });

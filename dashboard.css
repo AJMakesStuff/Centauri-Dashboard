@@ -1939,6 +1939,28 @@ select {
     white-space: nowrap;
 }
 
+.replay-actions button,
+#fullscreenReplayButton {
+    width: 40px;
+    height: 40px;
+    padding: 9px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.replay-actions button svg,
+#fullscreenReplayButton svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .replay-panel img {
     display: block;
     width: 100%;
@@ -1991,4 +2013,74 @@ select {
     .replay-panel:has(#replayImage:not([hidden])) .replay-actions {
         margin-left: auto;
     }
+}
+
+/* Reuse the replay viewer in fullscreen without moving it in the page layout. */
+.fullscreen-replay-button,
+.fullscreen-replay-close {
+    display: none;
+}
+
+.shell:fullscreen .fullscreen-replay-button {
+    display: block;
+    width: 40px;
+    margin: 0 auto 12px;
+    background: #101923;
+}
+
+.shell:fullscreen>.replay-panel {
+    display: none;
+}
+
+.shell:fullscreen>.replay-panel.fullscreen-replay-open:not([hidden]) {
+    display: block;
+    position: fixed;
+    z-index: 20;
+    top: max(76px, env(safe-area-inset-top));
+    right: max(24px, env(safe-area-inset-right));
+    width: min(720px, calc(100vw - 48px));
+    max-height: calc(100dvh - 100px);
+    overflow: auto;
+    margin: 0;
+    box-shadow: 0 18px 60px #0009;
+}
+
+.shell:fullscreen .replay-panel .fullscreen-replay-close {
+    display: inline-flex;
+}
+
+.shell:fullscreen .replay-panel #replayLive,
+.shell:fullscreen .replay-panel #replayDelete {
+    display: none;
+}
+
+.shell:fullscreen .replay-panel .replay-toolbar {
+    flex-wrap: wrap;
+}
+
+.shell:fullscreen .replay-panel .replay-actions {
+    margin-left: auto;
+}
+
+.shell:fullscreen .replay-panel img {
+    max-height: 45dvh;
+}
+
+@media (max-width: 480px) {
+    .shell:fullscreen>.replay-panel.fullscreen-replay-open:not([hidden]) {
+        right: 12px;
+        width: calc(100vw - 24px);
+        padding: 12px;
+    }
+}
+
+.replay-actions button.replay-view-button,
+#fullscreenReplayButton.replay-view-button {
+    width: auto;
+    padding: 9px 14px;
+    white-space: nowrap;
+}
+
+.shell:fullscreen #fullscreenReplayButton.replay-view-button {
+    width: 100%;
 }
