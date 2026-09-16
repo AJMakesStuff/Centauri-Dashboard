@@ -2,6 +2,7 @@ import ipaddress
 import json
 import re
 import socket
+import replay
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
@@ -28,8 +29,51 @@ def discover(address):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != '/api/replay':
+            self.send_error(404)
+            return
+        try:
+            size = int(self.headers.get('Content-Length', '0'))
+            if not 0 < size <= 8192:
+                raise ValueError('Invalid request size')
+            data = json.loads(self.rfile.read(size))
+            if not isinstance(data, dict) or not re.fullmatch(r'[a-f0-9]{32}', str(data.get('id', ''))):
+                raise ValueError('Invalid replay ID')
+            if not isinstance(data.get('active'), bool):
+                raise ValueError('Invalid recording state')
+            payload = replay.update(data['id'], data.get('url', ''), data['active'], data.get('job', ''))
+            self.reply(json.dumps(payload).encode(), 'application/json')
+        except (ValueError, OSError, TypeError) as error:
+            self.reply(json.dumps({'error': str(error)}).encode(), 'application/json', 400)
+
+    def reply(self, body, content_type, status=200):
+        self.send_response(status)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         url = urlsplit(self.path)
+        if url.path in ('/api/replay/frame', '/api/replay/time'):
+            query = parse_qs(url.query)
+            try:
+                with replay.lock:
+                    recording = replay.sessions[query.get('id', [''])[0]]
+                    index = int(query.get('index', ['0'])[0])
+                    if index < 0:
+                        raise ValueError('Invalid index')
+                    if url.path == '/api/replay/time':
+                        with recording.guard:
+                            body = json.dumps({'seconds': recording.frames[index][2]}).encode()
+                    else:
+                        body = recording.frame(index)
+                self.reply(body, 'application/json' if url.path.endswith('/time') else 'image/jpeg')
+            except (KeyError, IndexError, ValueError):
+                self.send_error(404)
+            return
         if url.path != '/api/discover':
             self.send_error(404)
             return

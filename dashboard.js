@@ -27,10 +27,10 @@ function persistSettings(setting) {
   if (setting) next[setting] = saved[setting];
   localStorage.setItem('dashboard', JSON.stringify(next));
 }
-function closeBothView() {
+function closeBothView(preserveReplay = false) {
   if (!bothView) return;
   for (const frame of $('bothPrinters').querySelectorAll('iframe')) {
-    try { frame.contentWindow?.stopConnection(); } catch { /* File origins may be isolated. */ }
+    try { frame.contentWindow?.stopConnection(preserveReplay); } catch { /* File origins may be isolated. */ }
     frame.remove();
   }
   Object.assign(saved, JSON.parse(localStorage.getItem('dashboard') || '{}'));
@@ -270,6 +270,11 @@ function updateStatus(raw) {
   const total = Number(info.TotalTicks), current = Number(info.CurrentTicks);
   const machineCode = Number(Array.isArray(s.CurrentStatus) ? s.CurrentStatus[0] : s.CurrentStatus);
   const printCode = info.Status == null ? null : Number(info.Status);
+  // Only actual print reports drive recording; connection resets are not job endings.
+  if (info.Status != null && typeof window !== 'undefined' && window.printReplay) {
+    const recording = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10, 12].includes(printCode));
+    window.printReplay.update(recording, $('camera').src || normalizeUrl(saved.cameraUrl || `${saved.printerIp}:${saved.printerModel === 'cc2' ? '8080/?action=stream' : '3031/video'}`), info.Filename || '', saved.printerModel);
+  }
   const printInProgress = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10].includes(printCode));
   const hasActiveJob = Boolean(info.Filename) && printInProgress;
   if (s.PrintInfo || 'CurrentStatus' in s) {
@@ -384,7 +389,8 @@ function startSession(active, cc2) {
   startCamera(saved.cameraUrl || `${saved.printerIp}:${cc2 ? '8080/?action=stream' : '3031/video'}`);
   heartbeatTimer = setInterval(() => { if (socket === active && active.readyState === WebSocket.OPEN) active.send('ping'); }, 15000);
 }
-function stopConnection() {
+function stopConnection(preserveReplay = false) {
+  if (!preserveReplay && typeof window !== 'undefined') window.printReplay?.update(false, '');
   resetPrintControls(false);
   clearTimeout(reconnectTimer); clearTimeout(discoveryTimer); clearInterval(heartbeatTimer); heartbeatTimer = undefined;
   connectionVersion++;
@@ -552,7 +558,7 @@ $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightStat
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
 $('resumePrint').onclick = () => controlPrint(131, 'resumePrint', 'Resume');
 $('pausePrint').onclick = () => controlPrint(129, 'pausePrint', 'Pause');
-$('refreshButton').onclick = () => { retryDelay = 1500; setConnection('Refreshing printer connection…'); stopConnection(); connect(); };
+$('refreshButton').onclick = () => { retryDelay = 1500; setConnection('Refreshing printer connection…'); stopConnection(true); connect(); };
 $('fullscreenButton').onclick = async () => {
   try { document.fullscreenElement ? await document.exitFullscreen() : await document.querySelector('.shell').requestFullscreen(); }
   catch { show('printControlStatus', 'Fullscreen is not available in this browser.'); }
@@ -583,7 +589,7 @@ function layoutFullscreenDock(fullscreen) {
   } else if (!fullscreen && fullscreenDockActive) {
     document.querySelector('.print-controls').after($('devicePanel'));
     document.querySelector('.camera').append($('printControlPanel'));
-    document.querySelector('.camera').after($('overlay'));
+    $('replayPanel').after($('overlay'));
     $('devicePanel').open = devicePanelWasOpen;
   }
   fullscreenDockActive = fullscreen;
@@ -616,7 +622,7 @@ $('settingsForm').onsubmit = e => {
   stopConnection(); connect();
 };
 $('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
-addEventListener('pagehide', () => { stopConnection(); closeBothView(); });
+addEventListener('pagehide', () => { stopConnection(true); closeBothView(true); });
 if (embedded) {
   document.body.classList.add('embedded-dashboard');
   document.querySelector('h1').textContent = embeddedModel === 'cc1' ? 'Centauri Carbon · CC1' : 'Centauri Carbon 2 · CC2';
@@ -630,3 +636,4 @@ if (embedded) {
 }
 if (!embedded && saved.viewMode === 'both' && profileReady('cc1') && profileReady('cc2')) showBothPrinters();
 else connect();
+

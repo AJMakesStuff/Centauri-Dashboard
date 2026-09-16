@@ -31,7 +31,11 @@
       <img id="camera" alt="Live view from the printer camera" hidden />
       <button class="light-toggle" id="lightToggle" type="button" aria-label="Toggle chamber light" aria-pressed="false"
         title="Toggle chamber light" disabled>💡</button>
-      <div class="live" id="liveBadge"><span class="dot"></span><span id="liveText">OFFLINE</span></div>
+      <div class="live" id="liveBadge">
+        <span class="dot"></span><span id="liveText">OFFLINE</span>
+        <span id="replayRecording" class="replay-recording" title="Recording replay locally" hidden><span
+            class="recording-dot" aria-hidden="true"></span>REC</span>
+      </div>
       <div class="print-control-panel" id="printControlPanel">
         <button id="controlsPanelToggle" class="panel-toggle controls-panel-toggle" type="button"
           aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel"
@@ -64,6 +68,21 @@
           <p id="printControlStatus" class="print-control-status" role="status" aria-live="polite"></p>
         </div>
       </div>
+    </section>
+    <section id="replayPanel" class="replay-panel" aria-label="Current print replay" hidden>
+      <div class="replay-toolbar">
+        <p id="replayStatus" role="status">Waiting for camera footage…</p>
+        <div class="replay-actions">
+          <button id="replayPlay" type="button" disabled>View Replay</button>
+          <button id="replayLive" type="button" hidden>Back to live</button>
+        </div>
+      </div>
+      <img id="replayImage" alt="Recorded view of the current print" hidden />
+      <input id="replayTimeline" type="range" min="0" max="0" value="0" step="1" aria-label="Replay position" disabled
+        hidden />
+      <div id="replayTime" class="replay-time" aria-label="Playback position and recorded duration" hidden>0:00 / 0:00
+      </div>
+      <small>Temporary local recording · deleted when the print ends</small>
     </section>
     <section class="overlay" id="overlay">
       <button id="statsPanelToggle" class="panel-toggle stats-panel-toggle" type="button"
@@ -148,6 +167,7 @@
   </dialog>
   <script src="vendor/mqtt.min.js"></script>
   <script src="cc2.js"></script>
+  <script src="replay.js"></script>
   <script src="dashboard.js"></script>
 </body>
 

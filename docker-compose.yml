@@ -18,4 +18,5 @@ services:
     command: ["python", "/app/discovery.py"]
     volumes:
       - ./discovery.py:/app/discovery.py:ro
+      - ./replay.py:/app/replay.py:ro
     restart: unless-stopped

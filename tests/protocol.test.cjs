@@ -746,3 +746,25 @@ test('fullscreen layout setting switches immediately, persists, and restores ori
   assert.equal(t.run('fullscreenDockActive'), false);
   assert.equal(t.element('statsPanelToggle').hidden, false);
 });
+
+test('replay follows confirmed print lifecycle and ignores connection resets', () => {
+  const t = setup();
+  t.run('globalThis.window = { printReplay: { update(...args) { (globalThis.replayCalls ||= []).push(args); } } }');
+  for (const code of [1, 6, 12, 7, 8, 9, 0]) {
+    t.run(`updateStatus({Status: {CurrentStatus: 1, PrintInfo: {Status: ${code}, Filename: 'test.gcode'}}})`);
+    assert.equal(t.run('replayCalls.at(-1)[0]'), ![0, 8, 9].includes(code));
+  }
+  assert.equal(t.run('replayCalls.at(-1)[2]'), 'test.gcode');
+  t.run('updateStatus({Status: {CurrentStatus: 0}})');
+  assert.equal(t.run('replayCalls.length'), 7);
+  t.run('stopConnection()');
+  assert.equal(t.run('replayCalls.at(-1)[0]'), false);
+});
+
+test('refresh reconnect can preserve replay while explicit disconnect still clears it', () => {
+  const t = setup();
+  t.run('globalThis.window = { printReplay: { update() { globalThis.deletedReplay = true; } } }; globalThis.deletedReplay = false; stopConnection(true)');
+  assert.equal(t.run('deletedReplay'), false);
+  t.run('stopConnection()');
+  assert.equal(t.run('deletedReplay'), true);
+});
