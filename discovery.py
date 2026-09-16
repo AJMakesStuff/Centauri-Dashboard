@@ -44,7 +44,10 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Invalid recording state')
             if not isinstance(data.get('delete', False), bool):
                 raise ValueError('Invalid delete action')
-            payload = replay.update(data['id'], data.get('url', ''), data['active'], data.get('job', ''), data.get('delete', False))
+            printer = data.get('printer', '')
+            if not isinstance(printer, str) or len(printer) > 512:
+                raise ValueError('Invalid printer identity')
+            payload = replay.update(data['id'], data.get('url', ''), data['active'], data.get('job', ''), data.get('delete', False), printer)
             self.reply(json.dumps(payload).encode(), 'application/json')
         except (ValueError, OSError, TypeError) as error:
             self.reply(json.dumps({'error': str(error)}).encode(), 'application/json', 400)

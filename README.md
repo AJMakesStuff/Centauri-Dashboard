@@ -69,10 +69,11 @@ In fullscreen, use View Replay above the print controls to open a floating repla
 
 Footage is stored in a temporary file on the machine running Docker, without cloud access. It starts when this dashboard detects the print, so footage from before the dashboard was opened is unavailable. Completion, cancellation, or an idle print report stops capture and keeps the replay available. The next detected print replaces it, including another print with the same filename. Delete Replay is available after the print ends and removes footage immediately. Stopping or restarting the discovery Docker service removes all recordings.
 
-Refreshing or reopening the dashboard in the same browser recovers the replay when printer status arrives. Each printer model has its own replay identity stored in browser storage, including in Both view. If the browser or printer disconnects, capture stops after status updates stop (within approximately 155 seconds), but existing footage is retained. Reconnecting during the same print resumes capture. Print transitions that happen entirely while disconnected cannot be reliably distinguished when the filename is unchanged.
+The service shares each replay by printer model and configured printer address. Opening the dashboard through localhost, the server LAN IP, or another browser recovers the same footage when printer status arrives. Configure the same printer model and address in each browser; dashboard settings are still stored separately for each browser origin. Both view keeps the two printers separate. If the browser or printer disconnects, capture stops after status updates stop (within approximately 155 seconds), but existing footage is retained. Reconnecting during the same print resumes capture. Print transitions that happen entirely while disconnected cannot be reliably distinguished when the filename is unchanged.
 
 Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
 
 ## Disclaimer
 
 This project was developed through a combination of human-written code and AI-assisted development.
+

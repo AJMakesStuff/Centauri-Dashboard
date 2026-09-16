@@ -1,5 +1,6 @@
 """Disk-backed, temporary MJPEG replay. No cloud or third-party dependencies."""
 import http.client
+import hashlib
 import ipaddress
 import socket
 import tempfile
@@ -106,13 +107,15 @@ class Recording:
                 time.sleep(0.1)
 
 
-def update(token, url, active, job='', delete=False):
+def update(token, url, active, job='', delete=False, printer=''):
+    if printer:
+        token = hashlib.sha256(printer.encode()).hexdigest()[:32]
     with lock:
         recording = sessions.get(token)
         if delete:
             if recording:
                 recording.close()
-            return {'frames': 0, 'recording': False}
+            return {'id': token, 'frames': 0, 'recording': False}
         if active and recording is not None and (recording.completed or recording.url != url or recording.job != job):
             sessions.pop(token).close()
             recording = None
@@ -125,7 +128,7 @@ def update(token, url, active, job='', delete=False):
             sessions[token] = recording
             threading.Thread(target=recording.capture, args=(recording.capture_stop,), daemon=True).start()
         if recording is None:
-            return {'frames': 0, 'recording': False}
+            return {'id': token, 'frames': 0, 'recording': False}
         recording.updated = time.monotonic()
         with recording.guard:
             if not active:
@@ -135,7 +138,7 @@ def update(token, url, active, job='', delete=False):
             elif recording.capture_stop.is_set() and not recording.closed:
                 recording.capture_stop = threading.Event()
                 threading.Thread(target=recording.capture, args=(recording.capture_stop,), daemon=True).start()
-            return {'frames': len(recording.frames), 'seconds': recording.frames[-1][2] if recording.frames else 0,
+            return {'id': token, 'frames': len(recording.frames), 'seconds': recording.frames[-1][2] if recording.frames else 0,
                     'error': recording.error, 'recording': active and not recording.closed}
 
 

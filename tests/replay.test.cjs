@@ -53,6 +53,7 @@ test('completed replay remains visible and can be explicitly deleted', async () 
   await new Promise(setImmediate);
   assert.equal(t.requests.at(-1).delete, true);
   assert.equal(t.elements.get('replayPanel').hidden, true);
+  assert.equal(t.elements.get('fullscreenReplayButton').hidden, true);
 });
 
 test('an idle dashboard recovers completed footage after reload', async () => {
@@ -80,6 +81,7 @@ test('fullscreen replay opens paused and closes without discarding the recording
   const button = t.elements.get('fullscreenReplayButton');
   const panel = t.elements.get('replayPanel');
   assert.equal(button.disabled, false);
+  assert.equal(button.hidden, false);
   button.onclick();
   assert.equal(panel.classList.contains('fullscreen-replay-open'), true);
   assert.equal(button['aria-expanded'], 'true');
@@ -98,4 +100,14 @@ test('fullscreen replay opens paused and closes without discarding the recording
   assert.equal(t.elements.get('replayPlay')['aria-label'], 'View replay');
   assert.equal(panel.hidden, false);
   assert.equal(t.requests.some(request => request.delete), false);
+});
+
+test('different browser storage sends the same server printer identity', () => {
+  const local = view(new Map());
+  const remote = view(new Map());
+  local.update(true, 'http://192.168.1.2:3031/video', 'part', 'cc1', '192.168.1.2');
+  remote.update(true, 'http://192.168.1.2:3031/video', 'part', 'cc1', '192.168.1.2');
+  assert.notEqual(local.requests[0].id, remote.requests[0].id);
+  assert.equal(local.requests[0].printer, 'cc1:192.168.1.2');
+  assert.equal(remote.requests[0].printer, local.requests[0].printer);
 });

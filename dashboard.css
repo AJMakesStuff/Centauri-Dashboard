@@ -2084,3 +2084,7 @@ select {
 .shell:fullscreen #fullscreenReplayButton.replay-view-button {
     width: 100%;
 }
+
+.shell:fullscreen #fullscreenReplayButton[hidden] {
+    display: none;
+}

@@ -273,7 +273,7 @@ function updateStatus(raw) {
   // Only actual print reports drive recording; connection resets are not job endings.
   if (info.Status != null && typeof window !== 'undefined' && window.printReplay) {
     const recording = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10, 12].includes(printCode));
-    window.printReplay.update(recording, $('camera').src || normalizeUrl(saved.cameraUrl || `${saved.printerIp}:${saved.printerModel === 'cc2' ? '8080/?action=stream' : '3031/video'}`), info.Filename || '', saved.printerModel);
+    window.printReplay.update(recording, $('camera').src || normalizeUrl(saved.cameraUrl || `${saved.printerIp}:${saved.printerModel === 'cc2' ? '8080/?action=stream' : '3031/video'}`), info.Filename || '', saved.printerModel, saved.printerIp);
   }
   const printInProgress = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10].includes(printCode));
   const hasActiveJob = Boolean(info.Filename) && printInProgress;

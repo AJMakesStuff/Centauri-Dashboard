@@ -97,3 +97,28 @@ class ReplayTests(unittest.TestCase):
         result = replay.update('tab', 'http://printer/video', True, 'part')
         self.assertEqual(result['frames'], 1)
         self.assertFalse(recording.capture_stop.is_set())
+
+    @patch('replay.Recording.capture')
+    @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
+    def test_different_browser_ids_share_printer_recording_and_deletion(self, target, capture):
+        first = replay.update('localhost-browser', 'http://printer/video', True, 'part', printer='cc1:192.168.1.2')
+        recording = replay.sessions[first['id']]
+        recording.append(b'shared footage', recording.started + 3)
+        remote = replay.update('lan-browser', 'http://printer/video', True, 'part', printer='cc1:192.168.1.2')
+        self.assertEqual(remote['id'], first['id'])
+        self.assertEqual(remote['frames'], 1)
+        self.assertEqual(len(replay.sessions), 1)
+        replay.update('localhost-browser', '', False, printer='cc1:192.168.1.2')
+        retained = replay.update('lan-browser', '', False, printer='cc1:192.168.1.2')
+        self.assertEqual(retained['frames'], 1)
+        replay.update('lan-browser', '', False, delete=True, printer='cc1:192.168.1.2')
+        self.assertTrue(recording.file.closed)
+        self.assertEqual(replay.update('localhost-browser', '', False, printer='cc1:192.168.1.2')['frames'], 0)
+
+    @patch('replay.Recording.capture')
+    @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
+    def test_shared_identity_keeps_printers_separate(self, target, capture):
+        one = replay.update('browser', 'http://printer/video', True, 'part', printer='cc1:192.168.1.2')
+        two = replay.update('browser', 'http://printer/video', True, 'part', printer='cc2:192.168.1.3')
+        self.assertNotEqual(one['id'], two['id'])
+        self.assertEqual(len(replay.sessions), 2)

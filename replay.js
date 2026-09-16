@@ -17,7 +17,7 @@
     try { localStorage.setItem(storageKey, value); } catch { /* Fall back to tab storage. */ }
     return value;
   }
-  let selectedModel = model, token = tokenFor(model);
+  let selectedModel = model, token = tokenFor(model), printer = '';
   const panel = document.getElementById('replayPanel');
   const slider = document.getElementById('replayTimeline');
   const image = document.getElementById('replayImage');
@@ -108,15 +108,16 @@
     const version = revision;
     const deleting = deletePending;
     try {
-      const response = await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: token, url, active, job, delete: deleting }), signal: AbortSignal.timeout(15000) });
+      const response = await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: token, printer, url, active, job, delete: deleting }), signal: AbortSignal.timeout(15000) });
       const data = await response.json();
       if (version !== revision) return;
       if (!response.ok) throw new Error(data.error || 'Replay unavailable');
+      if (data.id) token = data.id;
       if (deleting) deletePending = false;
       recordingIndicator.hidden = !active || data.recording === false || Boolean(data.error) || data.frames <= frames;
       if (!recordingIndicator.hidden) lastRecordingUpdate = Date.now();
       frames = data.frames;
-      fullscreenButton.disabled = !frames;
+      fullscreenButton.hidden = fullscreenButton.disabled = !frames;
       if (!frames) closeFullscreenReplay();
       panel.hidden = !active && !frames;
       deleteButton.hidden = active || !frames;
@@ -133,12 +134,14 @@
     } finally { busy = false; if (version !== revision && hasStatus) sync(); }
   }
   window.printReplay = {
-    detach() { ++revision; ++timeRequest; lastStatus = 0; hasStatus = false; active = false; closeFullscreenReplay(); fullscreenButton.disabled = true; panel.hidden = true; recordingIndicator.hidden = true; },
-    update(isActive, cameraUrl, jobName = '', printerModel = selectedModel) {
+    detach() { ++revision; ++timeRequest; lastStatus = 0; hasStatus = false; active = false; closeFullscreenReplay(); fullscreenButton.hidden = fullscreenButton.disabled = true; panel.hidden = true; recordingIndicator.hidden = true; },
+    update(isActive, cameraUrl, jobName = '', printerModel = selectedModel, printerAddress = '') {
       const modelChanged = printerModel !== selectedModel;
       if (modelChanged) { token = tokenFor(printerModel); selectedModel = printerModel; deletePending = false; }
       lastStatus = Date.now();
-      const changed = modelChanged || (isActive && (url !== cameraUrl || job !== jobName));
+      const printerKey = `${printerModel}:${(printerAddress || cameraUrl).trim().toLowerCase()}`;
+      const changed = modelChanged || printer !== printerKey || (isActive && (url !== cameraUrl || job !== jobName));
+      printer = printerKey;
       const starting = isActive && !active;
       if (starting || changed) deletePending = false;
       url = cameraUrl; job = jobName;
@@ -148,7 +151,7 @@
       if (active) deleteButton.hidden = true;
       panel.hidden = !active && !frames;
       recordingIndicator.hidden = true;
-      if (starting || changed) { closeFullscreenReplay(); fullscreenButton.disabled = true; image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
+      if (starting || changed) { closeFullscreenReplay(); fullscreenButton.hidden = fullscreenButton.disabled = true; image.hidden = slider.hidden = live.hidden = timeDisplay.hidden = true; stop(); image.removeAttribute('src'); frames = 0; slider.value = 0; slider.disabled = play.disabled = true; }
       sync();
     }
   };

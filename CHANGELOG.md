@@ -2,7 +2,14 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.5.2 (Current)
+## 0.5.3 (Current)
+
+### Fixed
+
+- View Replay button no longer visible in fullscreen after recording deleted
+- Recordings now visible on other devices connected to the host
+
+## 0.5.2
 
 ### Added
 
