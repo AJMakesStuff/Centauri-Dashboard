@@ -5,6 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Room of Requirement · Centauri Carbon</title>
+  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="dashboard.css" />
   <link rel="stylesheet" href="magic.css" id="themeStylesheet" />
   <link rel="stylesheet" href="themes.css" />
@@ -234,6 +235,13 @@
   <script src="replay.js"></script>
   <script src="dashboard.js"></script>
   <script src="magic.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch((error) => console.error('Service Worker Error:', error));
+    }
+  </script>
 </body>
 
 </html>
