@@ -1545,7 +1545,12 @@ select {
     text-shadow: 0 1px 5px #000, 0 2px 14px #000;
     max-height: calc(100dvh - 110px);
     overflow: auto;
+    scrollbar-width: none;
     padding: 6px max(24px, env(safe-area-inset-right)) 6px max(24px, env(safe-area-inset-left));
+}
+
+.shell:fullscreen .fullscreen-dock::-webkit-scrollbar {
+    display: none;
 }
 
 .shell.desktop-fullscreen:fullscreen .fullscreen-dock>#fullscreenTemperatures,
