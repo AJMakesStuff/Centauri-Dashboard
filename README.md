@@ -63,7 +63,7 @@ Includes [MQTT.js](https://github.com/mqttjs/MQTT.js) 5.14.1; its [MIT license](
 
 ## Local print replay
 
-While the dashboard is open during an active print, the Docker service records the HTTP MJPEG camera locally at up to 2 frames per second. Select View Replay below the live camera to open captured footage paused, then select Play or use the slider while recording continues. Back to live closes the replay image; the live camera remains available above it. Pausing a print keeps recording.
+While the dashboard is open during an active print, the Docker service records the HTTP MJPEG camera locally at up to 6 frames per second, with replay playback also targeting 6 frames per second. The actual capture rate depends on the camera stream. Select View Replay below the live camera to open captured footage paused, then select Play or use the slider while recording continues. Back to live closes the replay image; the live camera remains available above it. Pausing a print keeps recording.
 
 In fullscreen, use View Replay above the print controls to open a floating replay panel. It opens paused and includes playback, seeking, and the recorded timestamp. Close returns to the live fullscreen view without deleting footage.
 

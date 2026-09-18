@@ -9,6 +9,7 @@ import time
 from urllib.parse import urlsplit
 
 MAX_BYTES = 2 * 1024**3
+REPLAY_FPS = 6
 sessions = {}
 lock = threading.RLock()
 
@@ -86,7 +87,7 @@ class Recording:
                             break
                         frame, buffer = buffer[start:end + 2], buffer[end + 2:]
                         now = time.monotonic()
-                        if now - last >= 0.5:
+                        if now - last >= 1 / REPLAY_FPS:
                             with self.guard:
                                 if capture_stop.is_set() or not self.append(frame, now):
                                     return

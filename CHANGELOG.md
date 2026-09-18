@@ -4,6 +4,7 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 
 ## Miscellaneous Changes
 
+- Changed replay fps from 2 to 6
 - Removed the visible scrollbar from redesigned fullscreen layout
 
 ## 0.5.4 (Current)

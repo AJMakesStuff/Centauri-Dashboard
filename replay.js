@@ -1,5 +1,6 @@
 /* Keep the recording identity across reloads and retain footage until explicitly replaced. */
 (() => {
+  const REPLAY_FPS = 6;
   const settings = JSON.parse(localStorage.getItem('dashboard') || '{}');
   const model = new URLSearchParams(location.search).get('printer') || settings.printerModel || 'cc1';
   function tokenFor(printerModel) {
@@ -180,6 +181,6 @@
     if (!playing || !frames || !image.complete) return;
     if (Number(slider.value) >= frames - 1) return stop();
     slider.value = Number(slider.value) + 1; draw();
-  }, 500);
+  }, 1000 / REPLAY_FPS);
   // Unloading may be a refresh. The server stops stale capture but retains footage.
 })();
