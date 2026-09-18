@@ -7,7 +7,13 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 - Changed replay fps from 2 to 6
 - Removed the visible scrollbar from redesigned fullscreen layout
 
-## 0.5.4 (Current)
+## 0.6.0 (Current)
+
+### Added
+
+- Added theme library (Harry Potter currently, more to come)
+
+## 0.5.4
 
 ### Changed
 

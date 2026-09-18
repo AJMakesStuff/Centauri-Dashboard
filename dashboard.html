@@ -4,16 +4,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Centauri Carbon Dashboard</title>
+  <title>The Room of Requirement · Centauri Carbon</title>
   <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="magic.css" id="themeStylesheet" />
+  <link rel="stylesheet" href="themes.css" />
+  <script src="themes.js"></script>
 </head>
 
 <body>
+  <div class="great-hall" data-theme-only="harry-potter" aria-hidden="true">
+    <div class="hall-stars"></div>
+    <div class="hall-clouds"></div>
+    <div class="hall-moon"></div>
+    <div class="hall-candles">
+      <i style="--x:3%;--y:17%;--size:.85;--delay:-2s"></i>
+      <i style="--x:8%;--y:47%;--size:.6;--delay:-7s"></i>
+      <i style="--x:2%;--y:79%;--size:1;--delay:-4s"></i>
+      <i style="--x:16%;--y:5%;--size:.45;--delay:-6s"></i>
+      <i style="--x:34%;--y:3%;--size:.5;--delay:-1s"></i>
+      <i style="--x:57%;--y:9%;--size:.65;--delay:-5s"></i>
+      <i style="--x:71%;--y:6%;--size:.45;--delay:-3s"></i>
+      <i style="--x:88%;--y:16%;--size:.7;--delay:-8s"></i>
+      <i style="--x:97%;--y:30%;--size:.95;--delay:-3s"></i>
+      <i style="--x:93%;--y:62%;--size:.65;--delay:-6s"></i>
+      <i style="--x:98%;--y:86%;--size:.9;--delay:-1s"></i>
+      <i style="--x:22%;--y:94%;--size:.55;--delay:-4s"></i>
+    </div>
+  </div>
   <main class="shell">
     <header>
       <div>
-        <h1>Centauri Carbon</h1>
-        <p class="sub">Local printer dashboard</p>
+        <p class="eyebrow" data-theme-only="harry-potter">HOGWARTS · DEPARTMENT OF MAGICAL MAKING</p>
+        <h1 data-theme-text="heading">The Room of Requirement</h1>
+        <p class="sub" data-theme-text="subtitle">Centauri Carbon <span aria-hidden="true">✦</span> A little magic.
+          Layer by layer.</p>
       </div>
       <div class="button-group">
         <div id="printerSwitch" class="printer-switch" role="group" aria-label="Active printer" hidden>
@@ -32,9 +56,34 @@
           title="Open settings">⚙</button>
       </div>
     </header>
+    <div class="house-ribbon" data-theme-only="harry-potter" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
     <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
     <section class="camera" aria-label="Printer camera">
-      <div class="empty" id="cameraEmpty">Connect your printer to start the live camera feed.</div>
+      <div class="empty" id="cameraEmpty">
+        <span data-theme-only="original">Connect your printer to start the live camera feed.</span>
+        <div class="enchanted-sky" data-theme-only="harry-potter" aria-hidden="true">
+          <i class="candle"></i><i class="candle"></i><i class="candle"></i><i class="candle"></i><i
+            class="candle"></i><i class="candle"></i>
+          <span class="mote">✧</span><span class="mote">✦</span><span class="mote">✧</span><span
+            class="mote">·</span><span class="mote">✧</span>
+        </div>
+        <div class="magic-welcome" data-theme-only="harry-potter">
+          <div class="magic-seal" aria-hidden="true"><svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" />
+              <path d="M50 18 83 77H17Z M50 18v59" />
+              <circle cx="50" cy="58" r="19" />
+            </svg></div>
+          <p class="eyebrow">THE ENCHANTED OBSERVATORY</p>
+          <h2>I solemnly swear<br>I'm up to good prints.</h2>
+          <p>Your next creation is waiting to take shape.<br>Connect your printer to reveal the magic.</p>
+          <button id="magicConnect" class="primary" type="button"><span aria-hidden="true">✧</span> Connect your printer
+            <span aria-hidden="true">↗</span></button>
+          <span class="magic-caption">LIVE CAMERA · LOCAL CONNECTION</span>
+        </div>
+        <div class="castle" data-theme-only="harry-potter" aria-hidden="true"></div>
+      </div>
       <img id="camera" alt="Live view from the printer camera" hidden />
       <button class="light-toggle" id="lightToggle" type="button" aria-label="Toggle chamber light" aria-pressed="false"
         title="Toggle chamber light" disabled>💡</button>
@@ -103,7 +152,7 @@
       <div id="statsPanelContent">
         <section class="job-details">
           <div class="overlay-heading">
-            <div class="label">Current job</div>
+            <div class="label" data-theme-text="job">Current enchantment</div>
             <div class="overlay-actions">
               <button class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
                 title="Refresh printer connection">↻</button>
@@ -118,7 +167,8 @@
           <div class="details"><span id="layer">Layer — / —</span><span id="remaining">Finishes —</span></div>
         </section>
         <section class="temperatures" id="temperaturesPanel">
-          <div class="label temperature-label">Temperatures</div>
+          <div class="label temperature-label" data-theme-text="temperatures"><span aria-hidden="true">♨</span> Magical
+            elements · temperatures</div>
           <div class="stat-grid">
             <div class="stat"><span class="label">Nozzle</span><span class="value" id="nozzle">—</span><span
                 class="target-temperature">Target <span id="nozzleTarget">—</span></span></div>
@@ -135,13 +185,17 @@
     </div>
     <div class="status"><span class="dot"></span><span id="connection"><b>Not connected.</b> Open Settings to
         begin.</span></div>
-    <footer><span class="footer-mark">✦</span><span>Made with love by</span><strong>A.J. Richardson</strong></footer>
+    <footer><span class="footer-mark">✦</span><span data-theme-text="credit">Managed with magic by</span><strong>A.J.
+        Richardson</strong></footer>
   </main>
   <dialog id="settingsDialog">
     <form id="settingsForm">
       <div class="settings-header">
-        <h2>Settings</h2><button type="button" id="closeButton">🗙</button>
+        <h2 data-theme-text="settings">⚙ Workshop settings</h2><button type="button" id="closeButton">🗙</button>
       </div>
+      <label for="themeSelector">Theme</label>
+      <select id="themeSelector" aria-describedby="themeHint"></select>
+      <p id="themeHint" role="status">Theme changes apply and save automatically.</p>
       <p id="settingsNotice" class="settings-notice" hidden></p>
       <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a
           print</span><input id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
@@ -179,6 +233,7 @@
   <script src="cc2.js"></script>
   <script src="replay.js"></script>
   <script src="dashboard.js"></script>
+  <script src="magic.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,12 @@
+/* Theme-only decorations must stay hidden even when their stylesheet is disabled. */
+[data-theme-only] { display:none!important; }
+html[data-theme="harry-potter"] [data-theme-only="harry-potter"],
+html[data-theme="original"] [data-theme-only="original"] { display:revert!important; }
+html[data-theme="harry-potter"] .house-ribbon { display:flex!important; }
+html[data-theme="harry-potter"] .shell:fullscreen .house-ribbon,
+html[data-theme="harry-potter"] .both-view .house-ribbon,
+html[data-theme="harry-potter"] .embedded-dashboard .house-ribbon,
+html[data-theme="harry-potter"] body:has(.shell:fullscreen)>.great-hall,
+html[data-theme="harry-potter"] .embedded-dashboard>.great-hall { display:none!important; }
+/* Override theme-only visibility when the fullscreen header is condensed. */
+html[data-theme="harry-potter"] .shell:fullscreen header .eyebrow { display:none!important; }

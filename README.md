@@ -73,7 +73,10 @@ The service shares each replay by printer model and configured printer address. 
 
 Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
 
+## Appearance themes
+
+In Settings, use **Theme** to choose between the original or custom theme (Harry Potter currently, more to come). Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables the magical background, wand cursor, and spell effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
+
 ## Disclaimer
 
 This project was developed through a combination of human-written code and AI-assisted development.
-

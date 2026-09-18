@@ -1,0 +1,834 @@
+/* Hogwarts workshop: local assets and system fonts, no external requests. */
+:root {
+    --bg: #0c101b;
+    --line: #77613b66;
+    --text: #eee6d6;
+    --muted: #b3ac9f;
+    --accent: #d5b26c;
+    --danger: #f08d8a;
+}
+
+body {
+    background: radial-gradient(ellipse at 15% 0%, #23304766, transparent 55%), radial-gradient(ellipse at 95% 60%, #38213a44, transparent 50%), #0c101b;
+}
+
+.shell {
+    max-width: 1280px;
+    padding-top: 32px;
+}
+
+header {
+    margin-bottom: 24px;
+}
+
+h1,
+h2,
+.job-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+}
+
+h1 {
+    font-size: clamp(1.4rem, 3vw, 2.25rem);
+    letter-spacing: -.025em;
+    color: #f0dfb9;
+}
+
+.eyebrow {
+    color: #c4a570;
+    font-size: .62rem;
+    letter-spacing: .24em;
+    font-weight: 600;
+    margin: 0 0 10px;
+    line-height: 1.6;
+}
+
+.sub {
+    font-size: .78rem;
+    margin-top: 10px;
+    letter-spacing: .03em;
+}
+
+.sub span {
+    color: var(--accent);
+    padding: 0 9px;
+}
+
+.house-ribbon {
+    display: flex;
+    height: 3px;
+    gap: 5px;
+    margin-bottom: 20px;
+    opacity: .8;
+}
+
+.house-ribbon span {
+    flex: 1;
+    background: #963c42;
+}
+
+.house-ribbon span:nth-child(2) {
+    background: #c7a65a;
+}
+
+.house-ribbon span:nth-child(3) {
+    background: #506e97;
+}
+
+.house-ribbon span:nth-child(4) {
+    background: #4e806b;
+}
+
+button {
+    background: #1e2330;
+    border-color: #76634277;
+    transition: background .2s, box-shadow .2s, border-color .2s;
+}
+
+button:hover:enabled {
+    background: #393124;
+    border-color: #c7a465;
+    box-shadow: 0 0 18px #d5b26c20;
+}
+
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #ead098;
+    outline-offset: 4px;
+}
+
+button.primary {
+    background: linear-gradient(115deg, #d9bb7c, #b99150);
+    color: #231b10;
+    border-color: #e2c68b;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+.camera {
+    border-color: #9a7c495e;
+    border-radius: 18px;
+    background: #080d17;
+    box-shadow: 0 20px 70px #0005, 0 0 0 5px #b18a4210;
+}
+
+.camera .empty {
+    isolation: isolate;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 50%, #2b354759, transparent 60%), linear-gradient(145deg, #101827, #101321 70%, #202035);
+}
+
+.camera .empty::before {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border: 1px solid #d5b26c22;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+.magic-welcome {
+    position: relative;
+    z-index: 1;
+    padding: 20px 0 60px;
+}
+
+.magic-seal {
+    width: 77px;
+    height: 77px;
+    margin: 0 auto 19px;
+    filter: drop-shadow(0 0 15px #d5b26c55);
+    animation: seal-glow 5s ease-in-out infinite;
+}
+
+.magic-seal svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: #cdb176;
+    stroke-width: 1;
+}
+
+.magic-welcome h2 {
+    color: #ede0c5;
+    font-size: clamp(1.8rem, 3.8vw, 3.2rem);
+    line-height: 1.12;
+    margin: 14px 0;
+    letter-spacing: -.03em;
+}
+
+.magic-welcome>p:not(.eyebrow) {
+    font-size: .84rem;
+    line-height: 1.8;
+    color: #aaaeb8;
+    margin: 0 0 20px;
+}
+
+.magic-welcome button {
+    padding: 12px 20px;
+    font-size: .8rem;
+}
+
+.magic-welcome button span:first-child {
+    margin-right: 7px;
+}
+
+.magic-welcome button span:last-child {
+    margin-left: 16px;
+}
+
+.magic-caption {
+    display: block;
+    font-size: .55rem;
+    letter-spacing: .2em;
+    color: #9296a2;
+    margin-top: 15px;
+}
+
+.enchanted-sky {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.candle {
+    position: absolute;
+    top: 20%;
+    left: 12%;
+    width: 6px;
+    height: 39px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #927643, #ead9a6, #b99b64);
+    box-shadow: 0 0 16px #e8bc5310;
+    animation: candle-float 6s ease-in-out infinite;
+}
+
+.candle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 15px;
+    border-radius: 75% 25% 65% 35%;
+    background: #ffe6a4;
+    left: -1px;
+    top: -18px;
+    box-shadow: 0 0 12px 4px #ffb63e55, 0 0 40px 12px #ffb63e15;
+    animation: flame 2s ease-in-out infinite alternate;
+}
+
+.candle:nth-child(2) {
+    left: 25%;
+    top: 10%;
+    transform: scale(.65);
+    animation-delay: -2s;
+}
+
+.candle:nth-child(3) {
+    left: 78%;
+    top: 13%;
+    height: 29px;
+    animation-delay: -4s;
+}
+
+.candle:nth-child(4) {
+    left: 89%;
+    top: 37%;
+    animation-delay: -1s;
+}
+
+.candle:nth-child(5) {
+    left: 7%;
+    top: 56%;
+    height: 26px;
+    animation-delay: -3s;
+}
+
+.candle:nth-child(6) {
+    left: 69%;
+    top: 7%;
+    width: 4px;
+    height: 23px;
+    animation-delay: -5s;
+}
+
+.mote {
+    position: absolute;
+    color: #d8bd7e;
+    left: 18%;
+    top: 68%;
+    animation: mote-rise 9s ease-in-out infinite;
+}
+
+.mote:nth-of-type(2) {
+    left: 73%;
+    top: 69%;
+    animation-delay: -3s;
+}
+
+.mote:nth-of-type(3) {
+    left: 35%;
+    top: 21%;
+    animation-delay: -5s;
+}
+
+.mote:nth-of-type(4) {
+    left: 83%;
+    top: 80%;
+    animation-delay: -2s;
+}
+
+.mote:nth-of-type(5) {
+    left: 58%;
+    top: 83%;
+    animation-delay: -7s;
+}
+
+.castle {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 95px;
+    background: #05091377;
+    clip-path: polygon(0 70%, 5% 60%, 8% 65%, 8% 35%, 10% 17%, 12% 35%, 12% 70%, 17% 70%, 17% 44%, 19% 44%, 19% 20%, 21% 0, 23% 20%, 23% 44%, 26% 44%, 26% 60%, 31% 60%, 31% 80%, 68% 80%, 68% 60%, 72% 60%, 72% 34%, 74% 10%, 76% 34%, 76% 65%, 80% 65%, 80% 45%, 82% 20%, 84% 45%, 84% 65%, 91% 65%, 91% 50%, 94% 30%, 97% 50%, 97% 70%, 100% 70%, 100% 100%, 0 100%);
+}
+
+.overlay {
+    background: linear-gradient(115deg, #1b202b, #151923);
+    border-color: var(--line);
+    padding: 22px;
+}
+
+.label {
+    color: #b7ad98;
+    letter-spacing: .09em;
+    font-size: .68rem;
+}
+
+.job-title {
+    color: #e9ddc4;
+    font-size: 1.4rem;
+}
+
+.stat {
+    background: #0c111a88;
+    border: 1px solid #c1a46a20;
+    border-top: 2px solid #963c42;
+    border-radius: 9px;
+    padding: 12px;
+}
+
+.stat:nth-child(2) {
+    border-top-color: #c7a65a;
+}
+
+.stat:nth-child(3) {
+    border-top-color: #506e97;
+}
+
+.stat .value {
+    color: #f2dfb3;
+}
+
+.track {
+    background: #060b13;
+}
+
+.fill {
+    background: linear-gradient(90deg, #78609b, #d5b26c);
+    box-shadow: 0 0 15px #d5b26c55;
+}
+
+.print-control-panel,
+.replay-panel,
+dialog {
+    background: #161c28;
+    border-color: var(--line);
+}
+
+.live {
+    background: #121520dc;
+    border: 1px solid #b89a5d40;
+    color: #ded1b4;
+    letter-spacing: .12em;
+}
+
+.live.online .dot,
+.online .dot {
+    background: #89c5a4;
+}
+
+.status {
+    color: #aaa99f;
+    font-size: .78rem;
+}
+
+footer {
+    color: #979181;
+}
+
+footer strong,
+.footer-mark {
+    color: #c9ac71;
+}
+
+dialog {
+    box-shadow: 0 0 0 5px #d5b26c0c, 0 25px 100px #000b;
+}
+
+dialog::backdrop {
+    background: #050815bb;
+    backdrop-filter: blur(6px);
+}
+
+input,
+select {
+    background: #0b111c;
+    accent-color: var(--accent);
+}
+
+.shell:fullscreen .house-ribbon,
+.both-view .house-ribbon,
+.embedded-dashboard .house-ribbon {
+    display: none;
+}
+
+.shell:fullscreen header .eyebrow {
+    display: none;
+}
+
+.shell:fullscreen .overlay,
+.shell:fullscreen .print-control-panel {
+    background: #111723e8;
+}
+
+.embedded-dashboard .eyebrow {
+    font-size: .52rem;
+}
+
+.magic-spark {
+    position: fixed;
+    z-index: 100;
+    pointer-events: none;
+    color: #ebc87e;
+    font-size: 18px;
+    animation: spell-spark .65s ease-out forwards;
+}
+
+@keyframes candle-float {
+    50% {
+        translate: 0 -13px;
+    }
+}
+
+@keyframes flame {
+    to {
+        scale: .8 1.12;
+        opacity: .75;
+    }
+}
+
+@keyframes seal-glow {
+    50% {
+        filter: drop-shadow(0 0 22px #d5b26c99);
+    }
+}
+
+@keyframes mote-rise {
+
+    0%,
+    100% {
+        opacity: .15;
+        transform: translateY(10px);
+    }
+
+    50% {
+        opacity: .8;
+        transform: translateY(-25px);
+    }
+}
+
+@keyframes spell-spark {
+    to {
+        transform: translate(var(--spark-x), -45px) scale(.2);
+        opacity: 0;
+    }
+}
+
+@media(max-width:720px) {
+    .eyebrow {
+        font-size: .5rem;
+        letter-spacing: .14em;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .sub {
+        font-size: .66rem;
+        line-height: 1.6;
+    }
+
+    .sub span {
+        padding: 0 3px;
+    }
+
+    .house-ribbon {
+        margin-bottom: 15px;
+    }
+
+    .shell:not(:fullscreen) .camera .empty {
+        aspect-ratio: auto;
+        min-height: 460px;
+        padding: 45px 14px;
+        position: relative;
+    }
+
+    .magic-welcome {
+        padding: 15px 0;
+    }
+
+    .magic-welcome h2 {
+        font-size: 2.2rem;
+    }
+
+    .magic-seal {
+        width: 62px;
+        height: 62px;
+    }
+
+    .candle:nth-child(2),
+    .candle:nth-child(6) {
+        display: none;
+    }
+
+    .shell:not(:fullscreen) .print-control-panel {
+        background: #161c28;
+    }
+
+    .overlay {
+        padding: 16px;
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+
+    .magic-spark {
+        display: none;
+    }
+}
+
+/* Leave room for the observatory on narrower desktop and dual-printer views. */
+@media (min-width:721px) and (max-width:1100px) {
+    .shell:not(:fullscreen) .camera:has(.empty:not([hidden])) {
+        min-height: 530px;
+    }
+}
+
+@media (max-height:650px) and (min-width:721px) {
+    .shell:fullscreen .magic-welcome {
+        padding: 10px 0 60px;
+    }
+
+    .shell:fullscreen .magic-seal {
+        width: 45px;
+        height: 45px;
+        margin-bottom: 10px;
+    }
+
+    .shell:fullscreen .magic-welcome h2 {
+        font-size: 2rem;
+    }
+}
+
+/* The hotspot sits on the wand's star, keeping clicks precise. */
+@media (any-pointer: fine) {
+    body {
+        cursor: url("wand-cursor.svg") 5 5, auto;
+    }
+
+    button,
+    a,
+    summary,
+    select,
+    input[type="range"],
+    input[type="checkbox"],
+    [role="button"] {
+        cursor: url("wand-cursor-active.svg") 5 5, pointer;
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled {
+        cursor: not-allowed;
+    }
+
+    input:not([type="range"]):not([type="checkbox"]):not(:disabled),
+    textarea,
+    [contenteditable="true"] {
+        cursor: text;
+    }
+}
+
+/* A short, non-interactive spell burst at the wand's exact click position. */
+.wand-spell {
+    position: fixed;
+    inset: auto;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+    color: #ffe3a0;
+    pointer-events: none;
+    user-select: none;
+    z-index: 2147483647;
+}
+
+.wand-spell::backdrop {
+    background: transparent;
+    pointer-events: none;
+}
+
+.wand-spell-ring {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: -8px;
+    top: -8px;
+    border: 1px solid #ffe8ae;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 14px #ffcd6f, inset 0 0 10px #ffdd9399;
+    animation: wand-spell-wave .55s ease-out both;
+}
+
+.wand-spell-spark {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    line-height: 18px;
+    text-align: center;
+    font-size: 20px;
+    text-shadow: 0 0 7px #ffbf54, 0 0 14px #e6a650;
+    pointer-events: none;
+    animation: wand-spell-burst .8s cubic-bezier(.12, .65, .3, 1) both;
+}
+
+.wand-spell-spark:nth-child(3n) {
+    color: #d9cbff;
+    text-shadow: 0 0 9px #b197ef;
+}
+
+@keyframes wand-spell-wave {
+    from {
+        opacity: 1;
+        transform: scale(.3);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(4);
+    }
+}
+
+@keyframes wand-spell-burst {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(.4);
+    }
+
+    12% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--spell-x), var(--spell-y)) rotate(var(--spell-turn)) scale(.15);
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+    .wand-spell {
+        display: none !important;
+    }
+}
+
+/* Great Hall ceiling sits behind the entire normal-view dashboard. */
+body {
+    isolation: isolate;
+}
+
+.great-hall {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 76% 0%, #29395488, transparent 55%),
+        radial-gradient(ellipse at 12% 65%, #2a234144, transparent 55%), linear-gradient(#0c1426, #101523 60%, #11121d);
+}
+
+.hall-stars,
+.hall-clouds,
+.hall-candles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.hall-stars {
+    background-image: radial-gradient(1px 1px at 19px 29px, #f4e4bb 95%, transparent),
+        radial-gradient(1.5px 1.5px at 113px 71px, #d7e6ff 95%, transparent),
+        radial-gradient(1px 1px at 67px 137px, #c3d5ed 95%, transparent),
+        radial-gradient(2px 2px at 173px 191px, #ddcda288, transparent);
+    background-size: 211px 233px, 307px 283px, 167px 199px, 389px 347px;
+    opacity: .65;
+    animation: hall-twinkle 7s ease-in-out infinite alternate;
+}
+
+.hall-clouds {
+    inset: -12%;
+    opacity: .6;
+    background: radial-gradient(ellipse at 15% 23%, #7c8eab30, transparent 29%),
+        radial-gradient(ellipse at 72% 17%, #96a9c033, transparent 24%),
+        radial-gradient(ellipse at 42% 63%, #555f8126, transparent 35%),
+        radial-gradient(ellipse at 90% 78%, #74678928, transparent 25%);
+    animation: hall-cloud-drift 42s ease-in-out infinite alternate;
+}
+
+.hall-moon {
+    position: absolute;
+    top: 30px;
+    right: 18%;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #e9e5ce, #a9bdd0);
+    opacity: .35;
+    box-shadow: 0 0 45px 16px #bdcde120, 0 0 100px 45px #9cb4e010;
+}
+
+.hall-candles i {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 9px;
+    height: 62px;
+    border-radius: 3px 3px 2px 2px;
+    scale: var(--size);
+    opacity: .8;
+    background: linear-gradient(90deg, #886f48, #e8d6a4 45%, #ba9f69 75%, #7d6745);
+    box-shadow: 0 0 24px #eac27618;
+    animation: hall-candle-float 9s ease-in-out var(--delay) infinite;
+}
+
+.hall-candles i::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -20px;
+    width: 9px;
+    height: 17px;
+    border-radius: 65% 35% 55% 45%;
+    transform-origin: center bottom;
+    background: radial-gradient(ellipse at 50% 70%, #fffbea 10%, #ffe4a1 45%, #e6a449 80%);
+    box-shadow: 0 0 12px 5px #ffcf7460, 0 0 42px 16px #e6a64b22;
+    animation: hall-flame 2.7s ease-in-out var(--delay) infinite alternate;
+}
+
+.hall-candles i::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 2px;
+    height: 17px;
+    border-radius: 0 0 3px 3px;
+    background: #f0deb38a;
+}
+
+body:has(.shell:fullscreen)>.great-hall,
+.embedded-dashboard>.great-hall {
+    display: none;
+}
+
+/* A soft scrim protects the header from the illuminated ceiling. */
+.shell:not(:fullscreen)>header {
+    background: linear-gradient(90deg, #0c1426d9, #0c142655 65%, transparent);
+    border-radius: 12px;
+    text-shadow: 0 2px 8px #050914;
+}
+
+@keyframes hall-twinkle {
+    to {
+        opacity: .3;
+    }
+}
+
+@keyframes hall-cloud-drift {
+    to {
+        transform: translate(7%, 3%) scale(1.08);
+    }
+}
+
+@keyframes hall-candle-float {
+    50% {
+        translate: 5px -22px;
+        rotate: 2deg;
+    }
+}
+
+@keyframes hall-flame {
+    to {
+        transform: scale(.85, 1.12) rotate(-5deg);
+        opacity: .8;
+    }
+}
+
+@media(max-width:720px) {
+    .hall-moon {
+        width: 45px;
+        height: 45px;
+        right: 10%;
+        top: 22px;
+    }
+
+    .hall-candles i {
+        opacity: .45;
+    }
+
+    .hall-candles i:nth-child(even) {
+        display: none;
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+
+    .great-hall *,
+    .great-hall *::before {
+        animation: none !important;
+    }
+}
+
+/* Follow the real header height, including wrapped titles and zoomed text. */
+.shell.desktop-fullscreen:fullscreen .live {
+    top: var(--magic-header-bottom, 128px);
+}
