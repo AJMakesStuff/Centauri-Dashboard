@@ -37,6 +37,22 @@ Stop with `docker compose down`. After updating project files, run `docker compo
 
 Settings are saved in the current browser, including the CC2 access code in plain text. Clear this site's browser data to reset them.
 
+## Local print replay
+
+While the dashboard is open during an active print, the Docker service records the HTTP MJPEG camera locally at up to 6 frames per second, with replay playback also targeting 6 frames per second. The actual capture rate depends on the camera stream. Select View Replay below the live camera to open captured footage paused, then select Play or use the slider while recording continues. Back to live closes the replay image; the live camera remains available above it. Pausing a print keeps recording.
+
+In fullscreen, use View Replay above the print controls to open a floating replay panel. It opens paused and includes playback, seeking, and the recorded timestamp. Close returns to the live fullscreen view without deleting footage.
+
+Footage is stored in a temporary file on the machine running Docker, without cloud access. It starts when this dashboard detects the print, so footage from before the dashboard was opened is unavailable. Completion, cancellation, or an idle print report stops capture and keeps the replay available. The next detected print replaces it, including another print with the same filename. Delete Replay is available after the print ends and removes footage immediately. Stopping or restarting the discovery Docker service removes all recordings.
+
+The service shares each replay by printer model and configured printer address. Opening the dashboard through localhost, the server LAN IP, or another browser recovers the same footage when printer status arrives. Configure the same printer model and address in each browser; dashboard settings are still stored separately for each browser origin. Both view keeps the two printers separate. If the browser or printer disconnects, capture stops after status updates stop (within approximately 155 seconds), but existing footage is retained. Reconnecting during the same print resumes capture. Print transitions that happen entirely while disconnected cannot be reliably distinguished when the filename is unchanged.
+
+Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
+
+## Appearance themes
+
+In Settings, use **Theme** to choose between the original or custom theme (Harry Potter currently, more to come). Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables the magical background, wand cursor, and spell effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
+
 ## Troubleshooting
 
 - **Cannot connect:** Check the printer's power, IP address, serial number, and network/firewall access. For CC2, also check LAN Only mode and the access code.
@@ -60,22 +76,6 @@ Made by A.J. Richardson. Licensed under [MIT](LICENSE).
 CC2 references: [Elegoo SDK](https://github.com/elegooofficial/elegoo-link/tree/main/src/lan/adapters/elegoo_fdm_cc2) and [protocol notes](https://github.com/bjan/pycentauri/blob/main/docs/PROTOCOL.md#centauri-carbon-2-cc2-protocol-notes).
 
 Includes [MQTT.js](https://github.com/mqttjs/MQTT.js) 5.14.1; its [MIT license](vendor/MQTT-LICENSE.md) is bundled locally.
-
-## Local print replay
-
-While the dashboard is open during an active print, the Docker service records the HTTP MJPEG camera locally at up to 6 frames per second, with replay playback also targeting 6 frames per second. The actual capture rate depends on the camera stream. Select View Replay below the live camera to open captured footage paused, then select Play or use the slider while recording continues. Back to live closes the replay image; the live camera remains available above it. Pausing a print keeps recording.
-
-In fullscreen, use View Replay above the print controls to open a floating replay panel. It opens paused and includes playback, seeking, and the recorded timestamp. Close returns to the live fullscreen view without deleting footage.
-
-Footage is stored in a temporary file on the machine running Docker, without cloud access. It starts when this dashboard detects the print, so footage from before the dashboard was opened is unavailable. Completion, cancellation, or an idle print report stops capture and keeps the replay available. The next detected print replaces it, including another print with the same filename. Delete Replay is available after the print ends and removes footage immediately. Stopping or restarting the discovery Docker service removes all recordings.
-
-The service shares each replay by printer model and configured printer address. Opening the dashboard through localhost, the server LAN IP, or another browser recovers the same footage when printer status arrives. Configure the same printer model and address in each browser; dashboard settings are still stored separately for each browser origin. Both view keeps the two printers separate. If the browser or printer disconnects, capture stops after status updates stop (within approximately 155 seconds), but existing footage is retained. Reconnecting during the same print resumes capture. Print transitions that happen entirely while disconnected cannot be reliably distinguished when the filename is unchanged.
-
-Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
-
-## Appearance themes
-
-In Settings, use **Theme** to choose between the original or custom theme (Harry Potter currently, more to come). Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables the magical background, wand cursor, and spell effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
 
 ## Disclaimer
 
