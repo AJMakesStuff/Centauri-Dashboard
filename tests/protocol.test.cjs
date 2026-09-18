@@ -722,27 +722,31 @@ test('desktop fullscreen hides collapse arrows and expands previously collapsed 
   assert.equal(t.element('statsPanelContent').inert, true);
 });
 
-test('fullscreen layout setting switches immediately, persists, and restores original controls', () => {
+test('fullscreen layout button switches immediately, persists, and restores original controls', () => {
+  const html = fs.readFileSync('dashboard.html', 'utf8');
+  const dashboardScript = fs.readFileSync('dashboard.js', 'utf8');
+  assert.doesNotMatch(html, /id="redesignedFullscreen"/);
+  assert.match(html, /id="fullscreenLayoutButton"/);
+  assert.match(dashboardScript, /\$\('printerSwitch'\)\.before\(\$\('lightToggle'\)\)/);
   const t = setup(cc2);
-  assert.equal(t.element('redesignedFullscreen').checked, true);
+  assert.equal(t.element('fullscreenLayoutButton').title, 'Use original fullscreen layout');
   t.run("document.fullscreenElement = document.querySelector('.shell'); layoutFullscreenDock(true); updateFullscreenPanels()");
   assert.equal(t.run('fullscreenDockActive'), true);
-  t.element('redesignedFullscreen').checked = false;
-  t.element('redesignedFullscreen').onchange();
+  t.element('fullscreenLayoutButton').onclick();
   assert.equal(t.run('fullscreenDockActive'), false);
   assert.equal(t.element('fullscreenDock').hidden, true);
   assert.equal(t.element('statsPanelToggle').hidden, false);
   assert.equal(t.stored().redesignedFullscreen, false);
+  assert.equal(t.element('fullscreenLayoutButton').title, 'Use redesigned fullscreen layout');
   const restored = setup({ ...cc2, redesignedFullscreen: false });
-  assert.equal(restored.element('redesignedFullscreen').checked, false);
+  assert.equal(restored.element('fullscreenLayoutButton').title, 'Use redesigned fullscreen layout');
   restored.run('layoutFullscreenDock(true)');
   assert.equal(restored.run('fullscreenDockActive'), false);
-  t.element('redesignedFullscreen').checked = true;
-  t.element('redesignedFullscreen').onchange();
+  t.element('fullscreenLayoutButton').onclick();
   assert.equal(t.run('fullscreenDockActive'), true);
   assert.equal(t.element('statsPanelToggle').hidden, true);
   t.run('mobileFullscreenQuery.matches = true');
-  t.element('redesignedFullscreen').onchange();
+  t.element('fullscreenLayoutButton').onclick();
   assert.equal(t.run('fullscreenDockActive'), false);
   assert.equal(t.element('statsPanelToggle').hidden, false);
 });

@@ -2,7 +2,15 @@
 
 Notable changes to the Centauri Carbon Dashboard are recorded here.
 
-## 0.5.3 (Current)
+## 0.5.4 (Current)
+
+### Changed
+
+- Moved the old/redesigned fullscreen layout switch from Settings to a compact icon button shown in desktop fullscreen
+- Matched the chamber light button shape and styling to other header buttons
+- Retained chamber light button as left most button
+
+## 0.5.3
 
 ### Fixed
 

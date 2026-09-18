@@ -503,10 +503,19 @@ for (const name of ['stats', 'controls']) {
   };
 }
 updateFullscreenPanels();
-$('redesignedFullscreen').checked = saved.redesignedFullscreen !== false;
-$('redesignedFullscreen').onchange = () => {
-  saved.redesignedFullscreen = $('redesignedFullscreen').checked;
+function updateFullscreenLayoutButton() {
+  const redesigned = saved.redesignedFullscreen !== false;
+  const button = $('fullscreenLayoutButton');
+  const label = `Use ${redesigned ? 'original' : 'redesigned'} fullscreen layout`;
+  button.setAttribute('aria-pressed', String(redesigned));
+  button.setAttribute('aria-label', label);
+  button.title = label;
+}
+updateFullscreenLayoutButton();
+$('fullscreenLayoutButton').onclick = () => {
+  saved.redesignedFullscreen = saved.redesignedFullscreen === false;
   persistSettings('redesignedFullscreen');
+  updateFullscreenLayoutButton();
   layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
   updateFullscreenPanels();
 };
@@ -566,7 +575,7 @@ $('fullscreenButton').onclick = async () => {
 document.addEventListener('fullscreenchange', () => {
   const fullscreen = document.fullscreenElement === document.querySelector('.shell');
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
-  if (fullscreen && !bothView) $('fullscreenButton').before($('lightToggle'));
+  if (fullscreen && !bothView) $('printerSwitch').before($('lightToggle'));
   else $('camera').after($('lightToggle'));
   layoutFullscreenDock(fullscreen && !bothView);
   updateFullscreenPanels();

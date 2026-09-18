@@ -21,8 +21,15 @@
           <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
           <button id="switchBoth" type="button" aria-pressed="false">Both</button>
         </div>
-        <button id="fullscreenButton" aria-label="Toggle fullscreen" title="Toggle fullscreen">⛶</button><button
-          id="settingsButton" aria-label="Open settings" title="Open settings">⚙</button>
+        <button id="fullscreenLayoutButton" type="button" aria-label="Use original fullscreen layout"
+          title="Use original fullscreen layout" aria-pressed="true">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <rect x="2.5" y="3" width="15" height="14" rx="2" />
+            <path d="M2.5 12.5h15M7.5 12.5V17M12.5 12.5V17" />
+          </svg>
+        </button><button id="fullscreenButton" aria-label="Toggle fullscreen"
+          title="Toggle fullscreen">⛶</button><button id="settingsButton" aria-label="Open settings"
+          title="Open settings">⚙</button>
       </div>
     </header>
     <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
@@ -136,8 +143,6 @@
         <h2>Settings</h2><button type="button" id="closeButton">🗙</button>
       </div>
       <p id="settingsNotice" class="settings-notice" hidden></p>
-      <label class="toggle-setting" for="redesignedFullscreen"><span>Use redesigned fullscreen layout</span><input
-          id="redesignedFullscreen" type="checkbox" role="switch" checked /></label>
       <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a
           print</span><input id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
       <label class="toggle-setting" for="lockFansDuringPrint"><span>Lock fans during a print</span><input
