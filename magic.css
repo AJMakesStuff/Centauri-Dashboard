@@ -335,11 +335,89 @@ button:disabled {
 
 .track {
     background: #060b13;
+    overflow: visible;
 }
 
 .fill {
     background: linear-gradient(90deg, #78609b, #d5b26c);
     box-shadow: 0 0 15px #d5b26c55;
+    overflow: visible;
+}
+
+/* The Snitch's centre follows the live fill edge, including at 0% and 100%. */
+#progressFill::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    right: -15px;
+    top: 50%;
+    width: 30px;
+    height: 24px;
+    transform: translateY(-50%);
+    background: url("golden-snitch.svg") center / contain no-repeat;
+    filter: drop-shadow(0 0 5px #f4ce7488);
+    pointer-events: none;
+}
+
+/* Keep the shine inside the fill while allowing the Snitch to spread its wings. */
+#progressFill::after {
+    transform: none;
+    border-radius: inherit;
+    background: linear-gradient(105deg, transparent 30%, #ffffff80 50%, transparent 70%) -150% 0 / 250% 100% no-repeat;
+    animation: magic-progress-shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes magic-progress-shimmer {
+    to {
+        background-position: 250% 0;
+    }
+}
+
+/* Keep native replay seeking and keyboard controls, with a Snitch as the thumb. */
+#replayTimeline {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+#replayTimeline::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #78609b, #d5b26c);
+}
+
+#replayTimeline::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 24px;
+    margin-top: -9px;
+    border: 0;
+    border-radius: 0;
+    background: url("golden-snitch.svg") center / contain no-repeat;
+    filter: drop-shadow(0 0 5px #f4ce7488);
+}
+
+#replayTimeline::-moz-range-track {
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #78609b, #d5b26c);
+}
+
+#replayTimeline::-moz-range-thumb {
+    width: 30px;
+    height: 24px;
+    border: 0;
+    border-radius: 0;
+    background: url("golden-snitch.svg") center / contain no-repeat;
+    filter: drop-shadow(0 0 5px #f4ce7488);
+}
+
+#replayTimeline:disabled {
+    opacity: .5;
 }
 
 .print-control-panel,
