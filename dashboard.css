@@ -1313,7 +1313,7 @@ select {
     }
 }
 
-/* Mobile fullscreen reserves space for the feed; panels never float over it.
+/* Mobile fullscreen uses the whole viewport for the camera.
    The short landscape breakpoint also covers phones rotated sideways. */
 @media (max-width: 720px),
 (max-width: 960px) and (max-height: 600px) {
@@ -1482,6 +1482,45 @@ select {
     .shell:fullscreen .device-control-inputs button {
         min-height: 44px;
         font-size: 16px;
+    }
+
+    .shell:not(.both-view):fullscreen {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .shell:not(.both-view):fullscreen .camera {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .shell:not(.both-view):fullscreen .camera img {
+        object-fit: contain;
+    }
+
+    .shell:not(.both-view):fullscreen .camera .empty {
+        position: absolute;
+    }
+
+    .shell:not(.both-view):fullscreen>header {
+        position: absolute;
+        top: max(10px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+        left: auto;
+        margin: 0;
+    }
+
+    .shell:not(.both-view):fullscreen>header>div:first-child,
+    .shell:not(.both-view):fullscreen #printerSwitch,
+    .shell:not(.both-view):fullscreen .print-control-panel,
+    .shell:not(.both-view):fullscreen .overlay,
+    .shell:not(.both-view):fullscreen .live {
+        display: none;
     }
 }
 

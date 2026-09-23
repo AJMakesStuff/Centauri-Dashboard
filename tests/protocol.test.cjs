@@ -58,6 +58,31 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
   return { element, clients, sockets, run, tick, receive, register, timers, stored: () => JSON.parse(stored.get('dashboard') || '{}') };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
+test('mobile fullscreen locks landscape and releases orientation on exit', async () => {
+  const t = setup(cc2);
+  t.run(`globalThis.orientationCalls = [];
+    globalThis.screen = { orientation: {
+      lock: async value => orientationCalls.push(value),
+      unlock: () => orientationCalls.push('unlock')
+    } };
+    mobileFullscreenQuery.matches = true;
+    document.fullscreenElement = document.querySelector('.shell');`);
+  await t.run('updateFullscreenOrientation(true)');
+  assert.equal(t.run('orientationCalls.join(",")'), 'landscape');
+  await t.run('document.fullscreenElement = null; updateFullscreenOrientation(false)');
+  assert.equal(t.run('orientationCalls.join(",")'), 'landscape,unlock');
+});
+
+test('orientation locking skips desktop and tolerates unsupported mobile browsers', async () => {
+  const t = setup(cc2);
+  t.run(`globalThis.screen = { orientation: { lock: async () => { throw new Error('Denied'); } } };`);
+  await t.run('updateFullscreenOrientation(true)');
+  assert.equal(t.run('fullscreenOrientationRequested'), false);
+  await t.run('mobileFullscreenQuery.matches = true; updateFullscreenOrientation(true)');
+  await t.run('updateFullscreenOrientation(false)');
+  await t.run('delete globalThis.screen; updateFullscreenOrientation(true)');
+});
+
 test('mobile fullscreen panels collapse independently and restore interaction outside fullscreen', () => {
   const t = setup(cc2);
   t.run('mobileFullscreenQuery.matches = true');

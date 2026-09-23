@@ -572,8 +572,29 @@ $('fullscreenButton').onclick = async () => {
   try { document.fullscreenElement ? await document.exitFullscreen() : await document.querySelector('.shell').requestFullscreen(); }
   catch { show('printControlStatus', 'Fullscreen is not available in this browser.'); }
 };
+let fullscreenOrientationRequested = false;
+async function updateFullscreenOrientation(fullscreen) {
+  const orientation = globalThis.screen?.orientation;
+  if (!fullscreen) {
+    if (fullscreenOrientationRequested) {
+      fullscreenOrientationRequested = false;
+      try { orientation?.unlock?.(); } catch { /* Browser may already have released the lock. */ }
+    }
+    return;
+  }
+  if (!mobileFullscreenQuery?.matches || !orientation?.lock) return;
+  fullscreenOrientationRequested = true;
+  try {
+    await orientation.lock('landscape');
+    if (document.fullscreenElement !== document.querySelector('.shell')) {
+      orientation.unlock?.();
+      fullscreenOrientationRequested = false;
+    }
+  } catch { /* Keep fullscreen usable when orientation locking is unsupported or denied. */ }
+}
 document.addEventListener('fullscreenchange', () => {
   const fullscreen = document.fullscreenElement === document.querySelector('.shell');
+  updateFullscreenOrientation(fullscreen);
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
   if (fullscreen && !bothView) $('printerSwitch').before($('lightToggle'));
   else $('camera').after($('lightToggle'));
