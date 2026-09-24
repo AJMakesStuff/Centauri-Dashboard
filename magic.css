@@ -344,6 +344,14 @@ button:disabled {
     overflow: visible;
 }
 
+@media (min-width: 961px),
+(min-width: 721px) and (min-height: 601px) {
+    .shell:not(.desktop-fullscreen):fullscreen #statsPanelContent {
+        margin-inline: -20px;
+        padding-inline: 20px;
+    }
+}
+
 /* The Snitch's centre follows the live fill edge, including at 0% and 100%. */
 #progressFill::before {
     content: '';

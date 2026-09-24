@@ -4,6 +4,7 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 
 ## Miscellaneous Changes
 
+- Fixed Golden Snitch clipping in fullscreen
 - Changed mobile fullscreen so camera fills entire screen
 - Added golden snitch to Harry Potter theme progress bars
 - Changed replay fps from 2 to 6
