@@ -51,7 +51,7 @@ Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container
 
 ## Appearance themes
 
-In Settings, use **Theme** to choose between the original or custom theme (Harry Potter currently, more to come). Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables the magical background, wand cursor, and spell effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
+In Settings, use **Theme** to choose **Original**, **Harry Potter**, or **Star Wars**. Star Wars adds a starfield, Rebel Command styling, a lightsaber-inspired progress bar, and a camera standby screen. Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables theme decorations and effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
 
 ## Troubleshooting
 

@@ -651,7 +651,15 @@ $('settingsForm').onsubmit = e => {
   if (!detecting) $('settingsDialog').close();
   stopConnection(); connect();
 };
-$('camera').onerror = () => { $('cameraEmpty').hidden = false; $('cameraEmpty').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.'; };
+$('camera').onerror = () => {
+  $('camera').hidden = true;
+  $('cameraEmpty').hidden = false;
+  $('cameraOfflineMessage').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.';
+};
+$('camera').onload = () => {
+  $('camera').hidden = false;
+  $('cameraEmpty').hidden = true;
+};
 addEventListener('pagehide', () => { stopConnection(true); closeBothView(true); });
 if (embedded) {
   document.body.classList.add('embedded-dashboard');

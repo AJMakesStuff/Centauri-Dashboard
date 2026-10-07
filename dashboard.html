@@ -63,7 +63,22 @@
     <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
     <section class="camera" aria-label="Printer camera">
       <div class="empty" id="cameraEmpty">
-        <span data-theme-only="original">Connect your printer to start the live camera feed.</span>
+        <span id="cameraOfflineMessage" data-theme-only="original">Connect your printer to start the live camera
+          feed.</span>
+        <div class="galactic-welcome" data-theme-only="star-wars">
+          <svg class="galactic-emblem" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="48" />
+            <circle cx="60" cy="60" r="36" stroke-dasharray="3 8" />
+            <path d="M60 22v76M22 60h76M43 77l17-34 17 34-17-9Z" />
+          </svg>
+          <p class="galactic-kicker">REBEL ALLIANCE · FABRICATION DIVISION</p>
+          <h2>Camera offline</h2>
+          <p class="galactic-tagline">The Force is strong. The signal isn't.</p>
+          <p>Connect your printer or check its camera settings<br>to restore your transmission.</p>
+          <button id="galacticConnect" class="primary" type="button">Connect your printer <span
+              aria-hidden="true">↗</span></button>
+          <span class="galactic-caption">REBEL COMMAND · AWAITING TRANSMISSION</span>
+        </div>
         <div class="enchanted-sky" data-theme-only="harry-potter" aria-hidden="true">
           <i class="candle"></i><i class="candle"></i><i class="candle"></i><i class="candle"></i><i
             class="candle"></i><i class="candle"></i>

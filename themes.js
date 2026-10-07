@@ -10,6 +10,15 @@
   };
   const themes = {
     original: { label: 'Original', stylesheet: null, copy: originalCopy },
+    'star-wars': {
+      label: 'Star Wars', stylesheet: 'star-wars.css',
+      copy: {
+        title: 'Rebel Command · Centauri Carbon', heading: 'Rebel Command',
+        subtitle: 'Centauri Carbon · May the layers be with you.', job: 'Current mission',
+        temperatures: 'Reactor temperatures', settings: 'Command settings',
+        credit: 'Built in this galaxy by'
+      }
+    },
     'harry-potter': {
       label: 'Harry Potter', stylesheet: 'magic.css',
       copy: {
@@ -48,6 +57,9 @@
   // Apply the saved stylesheet before the body is rendered to avoid a theme flash.
   applyTheme(currentTheme);
   document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('galacticConnect')?.addEventListener('click', () => {
+      document.getElementById('settingsButton').click();
+    });
     const selector = document.getElementById('themeSelector');
     for (const [id, theme] of Object.entries(themes)) selector.add(new Option(theme.label, id));
     applyTheme(currentTheme);
@@ -67,4 +79,3 @@
     if (event.key === storageKey || event.key === null) applyTheme(event.newValue);
   });
 })();
-

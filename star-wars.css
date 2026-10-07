@@ -1,0 +1,276 @@
+/* Local CSS artwork and system fonts; no external assets or requests. */
+@media (any-pointer: fine) {
+
+    html[data-theme="star-wars"],
+    html[data-theme="star-wars"] body {
+        cursor: url("lightsaber-cursor.svg") 5 5, auto;
+    }
+
+    html[data-theme="star-wars"] :is(button, a[href], select, summary, input[type="range"], input[type="checkbox"], [role="button"]) {
+        cursor: url("lightsaber-cursor-active.svg") 5 5, pointer;
+    }
+
+    html[data-theme="star-wars"] :is(input:not([type="range"]):not([type="checkbox"]), textarea, [contenteditable="true"]) {
+        cursor: text;
+    }
+
+    html[data-theme="star-wars"] :is(button, input, select, textarea):disabled,
+    html[data-theme="star-wars"] [aria-disabled="true"] {
+        cursor: not-allowed;
+    }
+}
+
+:root {
+    --bg: #050810;
+    --line: #34465c;
+    --text: #edf4ff;
+    --muted: #a5b6cb;
+    --accent: #ffe81f;
+    --danger: #ff727a;
+}
+
+body {
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(1px 1px at 21px 35px, #ffffffb0 95%, transparent),
+        radial-gradient(1px 1px at 93px 81px, #b6dbff90 95%, transparent),
+        radial-gradient(2px 2px at 157px 119px, #ffffff70 95%, transparent),
+        radial-gradient(ellipse at 50% 0%, #17375b80, transparent 70%);
+    background-size: 173px 191px, 239px 277px, 359px 307px, 100% 100vh;
+}
+
+h1,
+.galactic-welcome h2 {
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 850;
+    letter-spacing: .07em;
+}
+
+h1 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.sub {
+    letter-spacing: .035em;
+}
+
+.camera {
+    border-color: #45617c;
+    background: radial-gradient(ellipse at 50% 40%, #12263b, #03060c 75%);
+    box-shadow: 0 0 28px #369bff14, 0 24px 70px #0008;
+}
+
+.overlay,
+.stat,
+.replay-panel,
+dialog {
+    background: #0c1420f5;
+    border-color: var(--line);
+}
+
+.label,
+.galactic-kicker,
+.galactic-caption {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+}
+
+button {
+    background-color: #152235;
+}
+
+button:hover:enabled {
+    background-color: #233951;
+    border-color: #74caff;
+}
+
+button.primary {
+    color: #171600;
+}
+
+button.primary:hover:enabled {
+    background: #fff269;
+    border-color: #fff269;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #8edaff;
+    outline-offset: 3px;
+}
+
+.printer-switch button[aria-pressed="true"] {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: #292710;
+}
+
+.track {
+    background: #02060d;
+    border: 1px solid #33465b;
+    overflow: visible;
+}
+
+.fill {
+    overflow: visible;
+    background: linear-gradient(180deg, #66beff, #e9faff 48%, #66beff);
+    box-shadow: 0 0 8px #4cbcff, 0 0 18px #198eff80;
+}
+
+.fill::after {
+    display: none;
+}
+
+/* The ship follows the real progress edge, including at 0% and 100%. */
+#progressFill::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    right: -19px;
+    top: 50%;
+    width: 38px;
+    height: 30px;
+    transform: translateY(-50%);
+    background: url("x-wing.svg") center / contain no-repeat;
+    filter: drop-shadow(0 0 4px #74caff88);
+    pointer-events: none;
+}
+
+/* Leave room for the wings in the scrollable fullscreen statistics panel. */
+@media (min-width: 961px),
+(min-width: 721px) and (min-height: 601px) {
+    .shell:not(.desktop-fullscreen):fullscreen #statsPanelContent {
+        margin-inline: -20px;
+        padding-inline: 20px;
+    }
+}
+
+.live.online .dot {
+    background: #90ffc0;
+    box-shadow: 0 0 10px #51ff99;
+}
+
+.footer-mark {
+    color: var(--accent);
+}
+
+.camera .empty {
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(1px 1px at 23px 38px, #fff9 95%, transparent) 0 0 / 137px 163px,
+        radial-gradient(1px 1px at 79px 93px, #a4dfff99 95%, transparent) 0 0 / 211px 197px,
+        radial-gradient(ellipse at 50% 40%, #173d60, #050913 75%);
+}
+
+.camera .empty::before {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border: 1px solid #79cfff35;
+    pointer-events: none;
+}
+
+.camera .empty::after {
+    content: '';
+    position: absolute;
+    width: 210px;
+    height: 210px;
+    right: -55px;
+    bottom: -100px;
+    border-radius: 50%;
+    border: 1px solid #91d3ff55;
+    background: repeating-linear-gradient(0deg, transparent 0 19px, #91d3ff15 20px 21px), #122135;
+    box-shadow: -12px -8px 40px #51b8ff20;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.galactic-welcome {
+    position: relative;
+    max-width: 540px;
+    padding: 20px 0 40px;
+}
+
+.galactic-welcome button {
+    padding: 12px 20px;
+    font-size: .8rem;
+}
+
+.galactic-welcome button span {
+    margin-left: 12px;
+}
+
+.galactic-welcome .galactic-tagline {
+    color: #d7eaff;
+}
+
+.galactic-emblem {
+    width: clamp(48px, 8vw, 100px);
+    height: clamp(48px, 8vw, 100px);
+    fill: none;
+    stroke: #8edaff;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 8px #44b5ff80);
+}
+
+.galactic-kicker {
+    color: #8edaff;
+    font-size: .65rem;
+    line-height: 1.6;
+}
+
+.galactic-welcome h2 {
+    margin: 12px 0;
+    font-size: clamp(1.1rem, 3vw, 2rem);
+}
+
+.galactic-welcome p:not(.galactic-kicker) {
+    font-size: .85rem;
+    line-height: 1.6;
+}
+
+.galactic-caption {
+    display: block;
+    margin-top: 22px;
+    font-size: .6rem;
+    color: var(--muted);
+}
+
+@media (max-width: 600px) {
+    .camera:has(.galactic-welcome) {
+        min-height: 320px;
+    }
+
+    .galactic-welcome {
+        padding: 12px 0 28px;
+    }
+
+    .galactic-emblem,
+    .galactic-caption {
+        display: none;
+    }
+
+    .galactic-kicker {
+        font-size: .55rem;
+    }
+
+    .galactic-welcome h2 {
+        margin: 8px 0;
+    }
+}
+
+@media (max-height: 500px) {
+
+    .shell:fullscreen .galactic-emblem,
+    .shell:fullscreen .galactic-caption,
+    .shell:fullscreen .galactic-tagline {
+        display: none;
+    }
+
+    .shell:fullscreen .galactic-welcome {
+        padding: 0 0 30px;
+    }
+}

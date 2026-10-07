@@ -798,3 +798,20 @@ test('disconnect detaches the view without ending or deleting the replay', () =>
   assert.equal(t.run('deletedReplay'), false);
   assert.equal(t.run('detachedReplay'), true);
 });
+
+test('camera errors preserve themed offline screens and a recovered feed hides them', () => {
+  const t = setup();
+  const placeholder = t.element('cameraEmpty');
+  const artwork = { theme: 'star-wars' };
+  placeholder.children.push(artwork);
+  placeholder.textContent = 'Existing theme content';
+  t.element('camera').onerror();
+  assert.equal(t.element('camera').hidden, true);
+  assert.equal(placeholder.hidden, false);
+  assert.equal(placeholder.textContent, 'Existing theme content');
+  assert.equal(placeholder.children[0], artwork);
+  assert.match(t.element('cameraOfflineMessage').textContent, /Camera stream unavailable/);
+  t.element('camera').onload();
+  assert.equal(t.element('camera').hidden, false);
+  assert.equal(placeholder.hidden, true);
+});

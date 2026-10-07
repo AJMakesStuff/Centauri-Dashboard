@@ -10,7 +10,17 @@ Notable changes to the Centauri Carbon Dashboard are recorded here.
 - Changed replay fps from 2 to 6
 - Removed the visible scrollbar from redesigned fullscreen layout
 
-## 0.6.1 (Current)
+## 0.6.2 (Current)
+
+### Added
+
+- Added Star Wars Theme
+
+### Fixed
+
+- Fixed caching issues that caused old data to stay present, rather than new data
+
+## 0.6.1
 
 ### Added
 
