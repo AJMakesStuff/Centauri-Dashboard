@@ -58,6 +58,12 @@ function setup(settings = {}, secureContext = true, fetch, search = '', sharedSt
   return { element, clients, sockets, run, tick, receive, register, timers, stored: () => JSON.parse(stored.get('dashboard') || '{}') };
 }
 const cc2 = { printerModel: 'cc2', printerIp: '192.168.1.50', serialNumber: 'SN123', accessCode: 'test-code' };
+
+test('camera URLs preserve uppercase HTTP schemes', () => {
+  const t = setup();
+  assert.equal(t.run("normalizeUrl('HTTP://camera.local/video')"), 'HTTP://camera.local/video');
+  assert.equal(t.run("normalizeUrl('HTTPS://camera.local/video')"), 'HTTPS://camera.local/video');
+});
 test('mobile fullscreen locks landscape and releases orientation on exit', async () => {
   const t = setup(cc2);
   t.run(`globalThis.orientationCalls = [];

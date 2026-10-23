@@ -250,7 +250,7 @@ function requestId() {
 }
 function message(cmd, data = {}) { const id = requestId(); return { Id: id, Data: { Cmd: cmd, Data: data, RequestID: id, serialNumber: saved.serialNumber, TimeStamp: Math.floor(Date.now() / 1000), From: 0 }, Topic: `sdcp/request/${saved.serialNumber}` }; }
 function send(cmd, data, target = socket) { if (target?.readyState === WebSocket.OPEN) target.send(JSON.stringify(message(cmd, data))); }
-function normalizeUrl(url) { return /^https?:\/\//.test(url) ? url : `http://${url}`; }
+function normalizeUrl(url) { return /^https?:\/\//i.test(url) ? url : `http://${url}`; }
 function startCamera(url) { if (!url) return; const img = $('camera'); img.src = normalizeUrl(url); img.hidden = false; $('cameraEmpty').hidden = true; }
 function updateStatus(raw) {
   const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value || 'TempOfHotbed' in value || 'CurrentFanSpeed' in value));
