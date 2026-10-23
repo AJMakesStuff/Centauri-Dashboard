@@ -114,6 +114,7 @@ def update(token, url, active, job='', delete=False, printer=''):
     with lock:
         recording = sessions.get(token)
         if delete:
+            recording = sessions.pop(token, None)
             if recording:
                 recording.close()
             return {'id': token, 'frames': 0, 'recording': False}
