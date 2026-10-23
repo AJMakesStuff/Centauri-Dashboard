@@ -75,15 +75,14 @@ class ReplayTests(unittest.TestCase):
 
     @patch('replay.Recording.capture')
     @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
-    def test_delete_during_print_does_not_restart_on_status_poll(self, target, capture):
+    def test_deleted_replay_starts_fresh_recording_for_next_identical_print(self, target, capture):
         replay.update('tab', 'http://printer/video', True, 'part')
         previous = replay.sessions['tab']
         replay.update('tab', '', True, delete=True)
         result = replay.update('tab', 'http://printer/video', True, 'part')
         self.assertTrue(previous.file.closed)
-        self.assertFalse(result['recording'])
-        replay.update('tab', '', False)
-        self.assertTrue(replay.update('tab', 'http://printer/video', True, 'part')['recording'])
+        self.assertIsNot(previous, replay.sessions['tab'])
+        self.assertTrue(result['recording'])
 
     @patch('replay.Recording.capture')
     @patch('replay.camera_target', return_value=('192.168.1.2', 80, '/video'))
