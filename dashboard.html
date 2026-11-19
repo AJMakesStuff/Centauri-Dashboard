@@ -101,6 +101,7 @@
         <div class="castle" data-theme-only="harry-potter" aria-hidden="true"></div>
       </div>
       <img id="camera" alt="Live view from the printer camera" hidden />
+      <video id="cameraLocal" aria-label="Live view from a local camera" autoplay playsinline muted hidden></video>
       <button class="light-toggle" id="lightToggle" type="button" aria-label="Toggle chamber light" aria-pressed="false"
         title="Toggle chamber light" disabled>💡</button>
       <div class="live" id="liveBadge">
@@ -240,7 +241,11 @@
         <p>Enable LAN Only mode on your CC2. Use its printer SN and access code from the touchscreen. The dashboard
           connects to MQTT on WebSocket port 9001.</p>
       </div>
-      <label for="cameraUrl">Camera URL (optional override)</label><input id="cameraUrl"
+      <label for="cameraSource">Camera source</label>
+      <select id="cameraSource"><option value="printer">Printer camera</option><option value="local">Local camera</option></select>
+      <label for="cameraDevice" id="cameraDeviceLabel" hidden>Local camera device</label>
+      <select id="cameraDevice" hidden><option value="local:">Default camera</option></select>
+      <label for="cameraUrl" id="cameraUrlLabel">Camera URL (optional override)</label><input id="cameraUrl"
         placeholder="http://192.168.1.50:3031/video" />
       <div class="actions"><button class="primary" type="submit">Save</button></div>
     </form>

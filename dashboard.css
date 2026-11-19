@@ -158,7 +158,8 @@ button.primary {
     box-shadow: 0 24px 70px #0008;
 }
 
-.camera img {
+.camera img,
+.camera video {
     width: 100%;
     height: 100%;
     display: block;
@@ -176,6 +177,7 @@ button.primary {
 }
 
 .camera img[hidden],
+.camera video[hidden],
 .camera .empty[hidden] {
     display: none;
 }
@@ -1162,6 +1164,7 @@ select {
     }
 
     .shell:not(:fullscreen) .camera img,
+    .shell:not(:fullscreen) .camera video,
     .shell:not(:fullscreen) .camera .empty {
         grid-column: 1;
         grid-row: 1;
@@ -1360,6 +1363,7 @@ select {
     }
 
     .shell:fullscreen .camera img,
+    .shell:fullscreen .camera video,
     .shell:fullscreen .camera .empty {
         position: static;
         grid-area: 1 / 1;
@@ -1499,7 +1503,8 @@ select {
         border-radius: 0;
     }
 
-    .shell:not(.both-view):fullscreen .camera img {
+    .shell:not(.both-view):fullscreen .camera img,
+    .shell:not(.both-view):fullscreen .camera video {
         object-fit: contain;
     }
 
@@ -1544,7 +1549,8 @@ select {
     border-radius: 0;
 }
 
-.shell.desktop-fullscreen:fullscreen .camera img {
+.shell.desktop-fullscreen:fullscreen .camera img,
+.shell.desktop-fullscreen:fullscreen .camera video {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -2159,4 +2165,9 @@ select {
 
 .shell:fullscreen #fullscreenReplayButton[hidden] {
     display: none;
+}
+#settingsForm label[hidden],
+#settingsForm select[hidden],
+#settingsForm input[hidden] {
+    display: none !important;
 }

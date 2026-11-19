@@ -42,7 +42,7 @@ function closeBothView(preserveReplay = false) {
 function showBothPrinters() {
   if (embedded || bothView || !profileReady('cc1') || !profileReady('cc2')) return;
   stopConnection();
-  $('camera').removeAttribute('src');
+  $('camera').removeAttribute('src'); stopLocalCamera();
   bothView = true;
   saved.viewMode = 'both';
   persistSettings();
@@ -251,7 +251,69 @@ function requestId() {
 function message(cmd, data = {}) { const id = requestId(); return { Id: id, Data: { Cmd: cmd, Data: data, RequestID: id, serialNumber: saved.serialNumber, TimeStamp: Math.floor(Date.now() / 1000), From: 0 }, Topic: `sdcp/request/${saved.serialNumber}` }; }
 function send(cmd, data, target = socket) { if (target?.readyState === WebSocket.OPEN) target.send(JSON.stringify(message(cmd, data))); }
 function normalizeUrl(url) { return /^https?:\/\//i.test(url) ? url : `http://${url}`; }
-function startCamera(url) { if (!url) return; const img = $('camera'); img.src = normalizeUrl(url); img.hidden = false; $('cameraEmpty').hidden = true; }
+// A camera URL of "local:" or "local:<deviceId>" selects a camera attached to this computer.
+const isLocalCamera = url => /^local:/i.test(url || '');
+const mediaDevices = () => (typeof navigator !== "undefined" ? navigator.mediaDevices : undefined);
+let localStream = null, localCameraToken = 0;
+function stopLocalCamera() {
+  localCameraToken++;
+  localStream?.getTracks().forEach(track => track.stop());
+  localStream = null;
+  const video = $('cameraLocal');
+  if (video) { video.srcObject = null; video.hidden = true; }
+}
+function showCameraError(text) {
+  $('camera').hidden = true; if ($('cameraLocal')) $('cameraLocal').hidden = true;
+  $('cameraEmpty').hidden = false;
+  $('cameraOfflineMessage').textContent = text;
+}
+async function startLocalCamera(url) {
+  stopLocalCamera();
+  const token = localCameraToken;
+  $('camera').removeAttribute('src'); $('camera').hidden = true;
+  if (!mediaDevices()?.getUserMedia) {
+    showCameraError('Local cameras need a secure page. Open the dashboard at http://localhost:8080 instead of the LAN address.');
+    return;
+  }
+  const deviceId = url.slice(6).trim();
+  try {
+    const stream = await mediaDevices().getUserMedia({ video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: false });
+    if (token !== localCameraToken) { stream.getTracks().forEach(track => track.stop()); return; }
+    localStream = stream;
+    const video = $('cameraLocal');
+    video.srcObject = stream; video.hidden = false; $('cameraEmpty').hidden = true;
+    video.play?.().catch(() => {});
+    populateCameraDevices();
+  } catch (error) {
+    if (token !== localCameraToken) return;
+    showCameraError(error?.name === 'NotAllowedError' ? 'Camera access was blocked. Allow camera access for this site in your browser.'
+      : 'Local camera unavailable. Check that it is connected and not in use by another app.');
+  }
+}
+function startCamera(url) {
+  if (!url) return;
+  if (isLocalCamera(url)) { startLocalCamera(url); return; }
+  stopLocalCamera();
+  const img = $('camera'); img.src = normalizeUrl(url); img.hidden = false; $('cameraEmpty').hidden = true;
+}
+async function populateCameraDevices() {
+  const select = $('cameraDevice');
+  if (!select || !mediaDevices()?.enumerateDevices) return;
+  let devices = [];
+  try { devices = (await mediaDevices().enumerateDevices()).filter(device => device.kind === 'videoinput'); } catch { return; }
+  select.replaceChildren(new Option('Default camera', 'local:'));
+  devices.forEach((device, index) => select.add(new Option(device.label || `Camera ${index + 1}`, `local:${device.deviceId}`)));
+  syncCameraPicker();
+}
+function syncCameraPicker() {
+  const source = $('cameraSource'), device = $('cameraDevice'); if (!source || !device) return;
+  const value = $('cameraUrl').value.trim(), local = isLocalCamera(value);
+  if (local && !Array.from(device.options || []).some(option => option.value === value) && device.add) device.add(new Option('Saved camera', value));
+  source.value = local ? 'local' : 'printer';
+  if (local) device.value = value;
+  for (const id of ['cameraDeviceLabel', 'cameraDevice']) $(id).hidden = !local;
+  for (const id of ['cameraUrlLabel', 'cameraUrl']) $(id).hidden = local;
+}
 function updateStatus(raw) {
   const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value || 'TempOfHotbed' in value || 'CurrentFanSpeed' in value));
   if (!s) return;
@@ -272,7 +334,8 @@ function updateStatus(raw) {
   const printCode = info.Status == null ? null : Number(info.Status);
   // Only actual print reports drive recording; connection resets are not job endings.
   if (info.Status != null && typeof window !== 'undefined' && window.printReplay) {
-    const recording = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10, 12].includes(printCode));
+    // Replay is recorded server-side from an HTTP stream, so it can't capture a local camera.
+    const recording = !isLocalCamera(saved.cameraUrl) && ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10, 12].includes(printCode));
     window.printReplay.update(recording, $('camera').src || normalizeUrl(saved.cameraUrl || `${saved.printerIp}:${saved.printerModel === 'cc2' ? '8080/?action=stream' : '3031/video'}`), info.Filename || '', saved.printerModel, saved.printerIp);
   }
   const printInProgress = ![0, 8, 9].includes(printCode) && (machineCode === 1 || [1, 2, 3, 4, 5, 6, 7, 10].includes(printCode));
@@ -409,7 +472,7 @@ function connect() {
   if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); }
   let active;
   let connectionError = '';
-  $('camera').removeAttribute('src'); $('camera').hidden = true; $('cameraEmpty').hidden = false;
+  $('camera').removeAttribute('src'); $('camera').hidden = true; stopLocalCamera(); $('cameraEmpty').hidden = false;
   updateStatus({ Status: { CurrentStatus: 0 } });
   updateLightState(false);
   try { active = socket = cc2 ? new CC2Connection(saved) : new WebSocket(`ws://${saved.printerIp}:3030/websocket`); } catch { return setConnection('Invalid connection settings or missing protocol library.'); }
@@ -535,6 +598,8 @@ function updateModelSettings() {
   $('serialLabel').textContent = cc2 ? 'Printer serial number (SN)' : 'Serial Number';
   $('serialNumber').required = cc2;
   $('serialHint').hidden = cc2;
+  syncCameraPicker();
+  populateCameraDevices();
   $('cameraUrl').placeholder = cc2 ? 'http://192.168.1.50:8080/?action=stream' : 'http://192.168.1.50:3031/video';
   if (cc2) cancelSerialProbe(true);
   else if ($('settingsDialog').open && !$('serialNumber').value.trim()) scheduleSerialProbe();
@@ -549,6 +614,11 @@ function openSettings(notice = '') {
   $('settingsDialog').showModal();
   if (!notice && editingModel === 'cc1' && !$('serialNumber').value.trim()) scheduleSerialProbe();
 }
+$('cameraSource').onchange = () => {
+  $('cameraUrl').value = $('cameraSource').value === 'local' ? ($('cameraDevice').value || 'local:') : '';
+  syncCameraPicker();
+};
+$('cameraDevice').onchange = () => { $('cameraUrl').value = $('cameraDevice').value; };
 $('printerModel').onchange = () => {
   cancelSerialProbe(true);
   settingsDrafts[editingModel] = Object.fromEntries(connectionFields.map(key => [key, $(key).value]));
