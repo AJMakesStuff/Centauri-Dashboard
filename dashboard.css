@@ -2171,3 +2171,128 @@ select {
 #settingsForm input[hidden] {
     display: none !important;
 }
+
+/* Streamer mode: edge-to-edge camera with a slim, unobtrusive status pill. */
+#streamerButton {
+    display: none;
+}
+
+.shell:not(.both-view):fullscreen #streamerButton {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+#streamerButton svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#streamerButton[aria-pressed="true"] {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.shell.streamer-mode:fullscreen>header {
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    opacity: 0;
+    transition: opacity .25s ease;
+    pointer-events: none;
+}
+
+.shell.streamer-mode.streamer-awake:fullscreen>header,
+.shell.streamer-mode:fullscreen>header:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.shell.streamer-mode:fullscreen>header>div:first-child,
+.shell.streamer-mode:fullscreen .house-ribbon {
+    display: none;
+}
+
+.shell.streamer-mode:fullscreen>header .button-group {
+    margin-left: auto;
+}
+
+.shell.streamer-mode:not(.streamer-awake):fullscreen {
+    cursor: none;
+}
+
+.shell.streamer-mode:fullscreen .live {
+    top: 14px;
+    left: 16px;
+    transition: opacity .25s ease;
+}
+
+.shell.streamer-mode.streamer-awake:fullscreen .live {
+    opacity: 0;
+}
+
+/* Hide the interactive panels; keep only job progress as a compact pill. */
+.shell.streamer-mode:fullscreen .fullscreen-dock>#fullscreenTemperatures,
+.shell.streamer-mode:fullscreen .fullscreen-dock>.print-control-panel,
+.shell.streamer-mode:fullscreen .fullscreen-dock .panel-toggle {
+    display: none;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock {
+    display: flex;
+    justify-content: flex-start;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    padding: 0 16px;
+    width: auto;
+    right: auto;
+    left: 0;
+    transform: none;
+    overflow: visible;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock>.overlay {
+    width: min(340px, calc(100vw - 32px));
+    padding: 8px 12px;
+    opacity: .85;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock>.overlay::before {
+    inset: 0;
+    border-radius: 12px;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock .job-title {
+    margin-bottom: 4px;
+    font-size: .8rem;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock .progress-row {
+    margin: 0;
+    font-size: .75rem;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock .track {
+    height: 3px;
+    margin: 6px 0;
+}
+
+.shell.streamer-mode:fullscreen .fullscreen-dock .details {
+    font-size: .68rem;
+    gap: 2px 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .shell.streamer-mode:fullscreen>header,
+    .shell.streamer-mode:fullscreen .live {
+        transition: none;
+    }
+}

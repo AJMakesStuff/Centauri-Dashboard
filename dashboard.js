@@ -541,7 +541,7 @@ if (typeof ResizeObserver !== 'undefined') {
 function updateFullscreenPanels() {
   const shell = document.querySelector('.shell');
   const fullscreen = !bothView && document.fullscreenElement === shell;
-  const collapsible = fullscreen && (Boolean(mobileFullscreenQuery?.matches) || saved.redesignedFullscreen === false);
+  const collapsible = fullscreen && (Boolean(mobileFullscreenQuery?.matches) || (saved.redesignedFullscreen === false && saved.streamerMode !== true));
   shell.classList.toggle('fullscreen-controls-collapsed', collapsible && collapsedPanels.controls);
   for (const [name, panelId] of [
     ['stats', 'overlay'],
@@ -581,6 +581,37 @@ $('fullscreenLayoutButton').onclick = () => {
   updateFullscreenLayoutButton();
   layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
   updateFullscreenPanels();
+};
+function updateStreamerButton() {
+  const button = $('streamerButton'), on = saved.streamerMode === true;
+  const label = `${on ? 'Disable' : 'Enable'} streamer mode`;
+  button.setAttribute('aria-pressed', String(on));
+  button.setAttribute('aria-label', label);
+  button.title = `${label} (minimal full screen layout)`;
+}
+updateStreamerButton();
+// In streamer mode the header and cursor fade away when the pointer is idle.
+let streamerIdleTimer;
+function wakeStreamerChrome() {
+  const shell = document.querySelector('.shell');
+  shell.classList.add('streamer-awake');
+  clearTimeout(streamerIdleTimer);
+  streamerIdleTimer = setTimeout(() => {
+    if (shell.querySelector('header:hover, header:focus-within')) wakeStreamerChrome();
+    else shell.classList.remove('streamer-awake');
+  }, 2500);
+}
+document.addEventListener('pointermove', () => {
+  if (document.querySelector('.shell').classList.contains('streamer-mode')) wakeStreamerChrome();
+});
+$('streamerButton').onclick = async () => {
+  saved.streamerMode = saved.streamerMode !== true;
+  persistSettings('streamerMode');
+  updateStreamerButton();
+  const shell = document.querySelector('.shell');
+  layoutFullscreenDock(document.fullscreenElement === shell && !bothView);
+  updateFullscreenPanels();
+  wakeStreamerChrome();
 };
 for (const setting of ['lockTemperaturesDuringPrint', 'lockFansDuringPrint']) {
   $(setting).checked = saved[setting] === true;
@@ -678,8 +709,10 @@ mobileFullscreenQuery?.addEventListener('change', () => {
 let devicePanelWasOpen = false, fullscreenDockActive = false;
 function layoutFullscreenDock(fullscreen) {
   const dock = $('fullscreenDock');
-  fullscreen = fullscreen && !mobileFullscreenQuery?.matches && saved.redesignedFullscreen !== false;
+  fullscreen = fullscreen && !mobileFullscreenQuery?.matches
+    && (saved.redesignedFullscreen !== false || saved.streamerMode === true);
   document.querySelector('.shell').classList.toggle('desktop-fullscreen', fullscreen);
+  document.querySelector('.shell').classList.toggle('streamer-mode', fullscreen && saved.streamerMode === true);
   if (fullscreen && !fullscreenDockActive) {
     devicePanelWasOpen = $('devicePanel').open;
     $('fullscreenTemperatures').append($('devicePanel'));
