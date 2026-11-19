@@ -4,41 +4,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>The Room of Requirement · Centauri Carbon</title>
+  <title>Centauri Carbon Dashboard</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="dashboard.css" />
-  <link rel="stylesheet" href="magic.css" id="themeStylesheet" />
-  <link rel="stylesheet" href="themes.css" />
-  <script src="themes.js"></script>
 </head>
 
 <body>
-  <div class="great-hall" data-theme-only="harry-potter" aria-hidden="true">
-    <div class="hall-stars"></div>
-    <div class="hall-clouds"></div>
-    <div class="hall-moon"></div>
-    <div class="hall-candles">
-      <i style="--x:3%;--y:17%;--size:.85;--delay:-2s"></i>
-      <i style="--x:8%;--y:47%;--size:.6;--delay:-7s"></i>
-      <i style="--x:2%;--y:79%;--size:1;--delay:-4s"></i>
-      <i style="--x:16%;--y:5%;--size:.45;--delay:-6s"></i>
-      <i style="--x:34%;--y:3%;--size:.5;--delay:-1s"></i>
-      <i style="--x:57%;--y:9%;--size:.65;--delay:-5s"></i>
-      <i style="--x:71%;--y:6%;--size:.45;--delay:-3s"></i>
-      <i style="--x:88%;--y:16%;--size:.7;--delay:-8s"></i>
-      <i style="--x:97%;--y:30%;--size:.95;--delay:-3s"></i>
-      <i style="--x:93%;--y:62%;--size:.65;--delay:-6s"></i>
-      <i style="--x:98%;--y:86%;--size:.9;--delay:-1s"></i>
-      <i style="--x:22%;--y:94%;--size:.55;--delay:-4s"></i>
-    </div>
-  </div>
   <main class="shell">
     <header>
       <div>
-        <p class="eyebrow" data-theme-only="harry-potter">HOGWARTS · DEPARTMENT OF MAGICAL MAKING</p>
-        <h1 data-theme-text="heading">The Room of Requirement</h1>
-        <p class="sub" data-theme-text="subtitle">Centauri Carbon <span aria-hidden="true">✦</span> A little magic.
-          Layer by layer.</p>
+        <h1>Centauri Carbon</h1>
+        <p class="sub">Local printer dashboard</p>
       </div>
       <div class="button-group">
         <div id="printerSwitch" class="printer-switch" role="group" aria-label="Active printer" hidden>
@@ -46,69 +22,23 @@
           <button id="switchCC2" type="button" aria-pressed="false">CC2</button>
           <button id="switchBoth" type="button" aria-pressed="false">Both</button>
         </div>
-        <button id="streamerButton" type="button" aria-label="Enable streamer mode"
-          title="Streamer mode: minimal full screen layout" aria-pressed="false">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <rect x="2.5" y="4" width="15" height="12" rx="2" />
-            <path d="M6 13.5h4" />
-            <circle cx="14" cy="13.5" r=".6" />
-          </svg>
-        </button><button id="fullscreenLayoutButton" type="button" aria-label="Use original fullscreen layout"
-          title="Use original fullscreen layout" aria-pressed="true">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <rect x="2.5" y="3" width="15" height="14" rx="2" />
-            <path d="M2.5 12.5h15M7.5 12.5V17M12.5 12.5V17" />
-          </svg>
-        </button><button id="fullscreenButton" aria-label="Toggle fullscreen"
+        <button id="fullscreenButton" aria-label="Toggle fullscreen"
           title="Toggle fullscreen">⛶</button><button id="settingsButton" aria-label="Open settings"
           title="Open settings">⚙</button>
       </div>
     </header>
-    <div class="house-ribbon" data-theme-only="harry-potter" aria-hidden="true">
-      <span></span><span></span><span></span><span></span>
-    </div>
     <section id="bothPrinters" class="both-printers" aria-label="Both printers" hidden></section>
-    <section class="camera" aria-label="Printer camera">
+    <section class="camera" id="cameraFrame" aria-label="Printer camera">
       <div class="empty" id="cameraEmpty">
-        <span id="cameraOfflineMessage" data-theme-only="original">Connect your printer to start the live camera
+        <span id="cameraOfflineMessage">Connect your printer to start the live camera
           feed.</span>
-        <div class="galactic-welcome" data-theme-only="star-wars">
-          <svg class="galactic-emblem" viewBox="0 0 120 120" aria-hidden="true">
-            <circle cx="60" cy="60" r="48" />
-            <circle cx="60" cy="60" r="36" stroke-dasharray="3 8" />
-            <path d="M60 22v76M22 60h76M43 77l17-34 17 34-17-9Z" />
-          </svg>
-          <p class="galactic-kicker">REBEL ALLIANCE · FABRICATION DIVISION</p>
-          <h2>Camera offline</h2>
-          <p class="galactic-tagline">The Force is strong. The signal isn't.</p>
-          <p>Connect your printer or check its camera settings<br>to restore your transmission.</p>
-          <button id="galacticConnect" class="primary" type="button">Connect your printer <span
-              aria-hidden="true">↗</span></button>
-          <span class="galactic-caption">REBEL COMMAND · AWAITING TRANSMISSION</span>
-        </div>
-        <div class="enchanted-sky" data-theme-only="harry-potter" aria-hidden="true">
-          <i class="candle"></i><i class="candle"></i><i class="candle"></i><i class="candle"></i><i
-            class="candle"></i><i class="candle"></i>
-          <span class="mote">✧</span><span class="mote">✦</span><span class="mote">✧</span><span
-            class="mote">·</span><span class="mote">✧</span>
-        </div>
-        <div class="magic-welcome" data-theme-only="harry-potter">
-          <div class="magic-seal" aria-hidden="true"><svg viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" />
-              <path d="M50 18 83 77H17Z M50 18v59" />
-              <circle cx="50" cy="58" r="19" />
-            </svg></div>
-          <p class="eyebrow">THE ENCHANTED OBSERVATORY</p>
-          <h2>I solemnly swear<br>I'm up to good prints.</h2>
-          <p>Your next creation is waiting to take shape.<br>Connect your printer to reveal the magic.</p>
-          <button id="magicConnect" class="primary" type="button"><span aria-hidden="true">✧</span> Connect your printer
-            <span aria-hidden="true">↗</span></button>
-          <span class="magic-caption">LIVE CAMERA · LOCAL CONNECTION</span>
-        </div>
-        <div class="castle" data-theme-only="harry-potter" aria-hidden="true"></div>
       </div>
       <img id="camera" alt="Live view from the printer camera" hidden />
       <video id="cameraLocal" aria-label="Live view from a local camera" autoplay playsinline muted hidden></video>
+      <button class="camera-swap" id="cameraSwap" type="button" aria-label="Swap main and small camera"
+        title="Swap cameras"><svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M4 7h11M12 4l3 3-3 3M16 13H5M8 10l-3 3 3 3" />
+        </svg></button>
       <button class="light-toggle" id="lightToggle" type="button" aria-label="Toggle chamber light" aria-pressed="false"
         title="Toggle chamber light" disabled>💡</button>
       <div class="live" id="liveBadge">
@@ -119,9 +49,6 @@
       <div class="print-control-panel" id="printControlPanel">
         <button id="fullscreenReplayButton" class="fullscreen-replay-button" type="button" aria-controls="replayPanel"
           aria-expanded="false" disabled hidden>View Replay</button>
-        <button id="controlsPanelToggle" class="panel-toggle controls-panel-toggle" type="button"
-          aria-controls="controlsPanelContent" aria-expanded="true" aria-label="Hide controls panel"
-          title="Hide controls panel" hidden>›</button>
         <div id="controlsPanelContent">
           <div class="print-controls" role="group" aria-label="Print controls">
             <button id="stopPrint" class="stop-print" type="button" title="Stop the current print"
@@ -170,17 +97,10 @@
       <small>Stored locally until the next print, manual deletion, or service restart.</small>
     </section>
     <section class="overlay" id="overlay">
-      <button id="statsPanelToggle" class="panel-toggle stats-panel-toggle" type="button"
-        aria-controls="statsPanelContent" aria-expanded="true" aria-label="Hide stats panel" title="Hide stats panel"
-        hidden>‹</button>
       <div id="statsPanelContent">
         <section class="job-details">
           <div class="overlay-heading">
-            <div class="label" data-theme-text="job">Current enchantment</div>
-            <div class="overlay-actions">
-              <button class="refresh-button" id="refreshButton" type="button" aria-label="Refresh printer connection"
-                title="Refresh printer connection">↻</button>
-            </div>
+            <div class="label">Current job</div>
           </div>
           <div class="job-title" id="filename">Waiting for a print…</div>
           <div class="progress-row"><span class="label" id="machineStatus">Waiting for status</span><strong
@@ -191,8 +111,7 @@
           <div class="details"><span id="layer">Layer — / —</span><span id="remaining">Finishes —</span></div>
         </section>
         <section class="temperatures" id="temperaturesPanel">
-          <div class="label temperature-label" data-theme-text="temperatures"><span aria-hidden="true">♨</span> Magical
-            elements · temperatures</div>
+          <div class="label temperature-label">Temperatures</div>
           <div class="stat-grid">
             <div class="stat"><span class="label">Nozzle</span><span class="value" id="nozzle">—</span><span
                 class="target-temperature">Target <span id="nozzleTarget">—</span></span></div>
@@ -204,22 +123,16 @@
         </section>
       </div>
     </section>
-    <div id="fullscreenDock" class="fullscreen-dock" hidden>
-      <section id="fullscreenTemperatures" aria-label="Temperature and fan controls"></section>
-    </div>
     <div class="status"><span class="dot"></span><span id="connection"><b>Not connected.</b> Open Settings to
         begin.</span></div>
-    <footer><span class="footer-mark">✦</span><span data-theme-text="credit">Managed with magic by</span><strong>A.J.
+    <footer><span class="footer-mark">✦</span><span>Made with love by</span><strong>A.J.
         Richardson</strong></footer>
   </main>
   <dialog id="settingsDialog">
     <form id="settingsForm">
       <div class="settings-header">
-        <h2 data-theme-text="settings">⚙ Workshop settings</h2><button type="button" id="closeButton">🗙</button>
+        <h2>⚙ Settings</h2><button type="button" id="closeButton">🗙</button>
       </div>
-      <label for="themeSelector">Theme</label>
-      <select id="themeSelector" aria-describedby="themeHint"></select>
-      <p id="themeHint" role="status">Theme changes apply and save automatically.</p>
       <p id="settingsNotice" class="settings-notice" hidden></p>
       <label class="toggle-setting" for="lockTemperaturesDuringPrint"><span>Lock temperatures during a
           print</span><input id="lockTemperaturesDuringPrint" type="checkbox" role="switch" /></label>
@@ -254,6 +167,9 @@
       <select id="cameraDevice" hidden><option value="local:">Default camera</option></select>
       <label for="cameraUrl" id="cameraUrlLabel">Camera URL (optional override)</label><input id="cameraUrl"
         placeholder="http://192.168.1.50:3031/video" />
+      <input id="cameraDual" type="hidden" />
+      <label class="toggle-setting" id="cameraDualRow" for="cameraDualToggle" hidden><span>Also show the printer camera
+          (side by side)</span><input id="cameraDualToggle" type="checkbox" role="switch" /></label>
       <div class="actions"><button class="primary" type="submit">Save</button></div>
     </form>
   </dialog>
@@ -261,7 +177,6 @@
   <script src="cc2.js"></script>
   <script src="replay.js"></script>
   <script src="dashboard.js"></script>
-  <script src="magic.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')

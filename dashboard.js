@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const saved = JSON.parse(localStorage.getItem('dashboard') || '{}');
-const connectionFields = ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode'];
+const connectionFields = ['printerIp', 'serialNumber', 'cameraUrl', 'accessCode', 'cameraDual'];
 saved.printerModel = saved.printerModel === 'cc2' ? 'cc2' : 'cc1';
 saved.profiles ||= {};
 // Recent versions saved edits only at the top level; preserve those edits on migration.
@@ -255,24 +255,91 @@ function normalizeUrl(url) { return /^https?:\/\//i.test(url) ? url : `http://${
 const isLocalCamera = url => /^local:/i.test(url || '');
 const mediaDevices = () => (typeof navigator !== "undefined" ? navigator.mediaDevices : undefined);
 let localStream = null, localCameraToken = 0;
+// Dual view shows the printer camera beside the local one. It only applies when the local camera is the source.
+const dualCameraActive = () => isLocalCamera(saved.cameraUrl) && saved.cameraDual === '1';
+const defaultPrinterCameraUrl = () => `${saved.printerIp}:${saved.printerModel === 'cc2' ? '8080/?action=stream' : '3031/video'}`;
+// In fullscreen dual view the "pip" feed is the small corner box; the other fills the screen.
+function applyDualRoles() {
+  const swapped = $('cameraFrame')?.classList.contains('swapped');
+  $('camera').classList.toggle('pip', Boolean(swapped));
+  $('cameraLocal').classList.toggle('pip', !swapped);
+  if (typeof placePip === 'function') placePip();
+}
+function setDualLayout(on) {
+  const frame = $('cameraFrame'); if (!frame) return;
+  frame.classList.toggle('dual', on);
+  for (const id of ['camera', 'cameraLocal']) $(id).classList.remove('pip');
+  if (on) applyDualRoles(); else placePip();
+}
+function swapDualCameras() {
+  const frame = $('cameraFrame');
+  if (!frame?.classList.contains('dual')) return;
+  frame.classList.toggle('swapped');
+  applyDualRoles();
+}
+// The small box sits in the bottom-right corner on desktop, and bottom-centre on narrow screens.
+const PIP_CENTER = { x: 0.5, y: 1 }, PIP_CORNER = { x: 1, y: 1 };
+const pipAnchor = () => (globalThis.innerWidth ?? 1000) > 720 ? PIP_CORNER : PIP_CENTER;
+const pipInsets = () => ({ top: 84, side: 12, bottom: 16 });
+function placePip() {
+  const frame = $('cameraFrame'); if (!frame) return;
+  const clear = () => { for (const el of [$('camera'), $('cameraLocal'), $('cameraSwap')]) if (el.style) el.style.left = el.style.top = el.style.right = el.style.bottom = ''; };
+  if (typeof frame.querySelector !== 'function') return clear();
+  const pip = frame.querySelector(':scope > .pip');
+  const main = frame.querySelector(':scope > :is(img, video):not(.pip)');
+  if (!pip || !main || main.hidden || !document.fullscreenElement || !frame.classList.contains('dual')) return clear();
+  for (const el of [$('camera'), $('cameraLocal')]) if (el !== pip) { el.style.left = el.style.top = el.style.right = el.style.bottom = ''; }
+  const fw = frame.clientWidth, fh = frame.clientHeight, pw = pip.offsetWidth, ph = pip.offsetHeight, m = pipInsets();
+  const minX = m.side, maxX = Math.max(minX, fw - pw - m.side), minY = m.top, maxY = Math.max(minY, fh - ph - m.bottom);
+  const anchor = pipAnchor();
+  const left = minX + anchor.x * (maxX - minX), top = minY + anchor.y * (maxY - minY);
+  Object.assign(pip.style, { left: `${left}px`, top: `${top}px`, right: 'auto', bottom: 'auto' });
+  Object.assign($('cameraSwap').style, { left: `${left + pw - 38}px`, top: `${top + 6}px`, right: 'auto', bottom: 'auto' });
+}
+addEventListener('resize', placePip);
+document.addEventListener('fullscreenchange', () => requestAnimationFrame(placePip));
+// Feeds appear, disappear and resize on their own (late-loading second camera, reconnect after saving settings),
+// and each of those clears or invalidates the inline corner position, so re-place whenever they change.
+{
+  const frame = $('cameraFrame');
+  if (frame && typeof MutationObserver === 'function') {
+    new MutationObserver(() => placePip()).observe(frame, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  }
+  if (frame && typeof ResizeObserver === 'function') {
+    const resizeObserver = new ResizeObserver(() => placePip());
+    for (const el of [frame, $('camera'), $('cameraLocal')]) if (el) resizeObserver.observe(el);
+  }
+}
+$('cameraSwap').onclick = e => { e.stopPropagation(); swapDualCameras(); };
+for (const id of ['camera', 'cameraLocal']) $(id).addEventListener('click', e => {
+  if (e.currentTarget.classList.contains('pip') && document.fullscreenElement) swapDualCameras();
+});
 function stopLocalCamera() {
   localCameraToken++;
   localStream?.getTracks().forEach(track => track.stop());
   localStream = null;
   const video = $('cameraLocal');
   if (video) { video.srcObject = null; video.hidden = true; }
+  setDualLayout(false);
 }
-function showCameraError(text) {
-  $('camera').hidden = true; if ($('cameraLocal')) $('cameraLocal').hidden = true;
-  $('cameraEmpty').hidden = false;
+function showCameraError(text, keepPrinter = false) {
+  if (!keepPrinter) $('camera').hidden = true;
+  if ($('cameraLocal')) $('cameraLocal').hidden = true;
+  // In dual view a working printer camera stays up beside a failed local one.
+  $('cameraEmpty').hidden = keepPrinter && !$('camera').hidden;
   $('cameraOfflineMessage').textContent = text;
+  placePip();
 }
 async function startLocalCamera(url) {
   stopLocalCamera();
   const token = localCameraToken;
-  $('camera').removeAttribute('src'); $('camera').hidden = true;
+  const dual = dualCameraActive();
+  setDualLayout(dual);
+  const printerImg = $('camera');
+  if (dual && saved.printerIp) { printerImg.src = normalizeUrl(defaultPrinterCameraUrl()); printerImg.hidden = false; $('cameraEmpty').hidden = true; }
+  else { printerImg.removeAttribute('src'); printerImg.hidden = true; }
   if (!mediaDevices()?.getUserMedia) {
-    showCameraError('Local cameras need a secure page. Open the dashboard at http://localhost:8080 instead of the LAN address.');
+    showCameraError('Local cameras need a secure page. Open the dashboard at http://localhost:8080 instead of the LAN address.', dual);
     return;
   }
   const deviceId = url.slice(6).trim();
@@ -287,7 +354,7 @@ async function startLocalCamera(url) {
   } catch (error) {
     if (token !== localCameraToken) return;
     showCameraError(error?.name === 'NotAllowedError' ? 'Camera access was blocked. Allow camera access for this site in your browser.'
-      : 'Local camera unavailable. Check that it is connected and not in use by another app.');
+      : 'Local camera unavailable. Check that it is connected and not in use by another app.', dual);
   }
 }
 function startCamera(url) {
@@ -313,6 +380,10 @@ function syncCameraPicker() {
   if (local) device.value = value;
   for (const id of ['cameraDeviceLabel', 'cameraDevice']) $(id).hidden = !local;
   for (const id of ['cameraUrlLabel', 'cameraUrl']) $(id).hidden = local;
+  // Dual view is only offered with a local camera; clear it otherwise so it can't linger.
+  if (!local) $('cameraDual').value = '';
+  $('cameraDualRow').hidden = !local;
+  $('cameraDualToggle').checked = local && $('cameraDual').value === '1';
 }
 function updateStatus(raw) {
   const s = [raw.Status, raw.Data?.Status, raw.Data?.Data?.Status, raw.Data?.Data, raw.Data, raw].find(value => value && typeof value === 'object' && ('PrintInfo' in value || 'CurrentStatus' in value || 'TempOfNozzle' in value || 'TempOfHotbed' in value || 'CurrentFanSpeed' in value));
@@ -529,7 +600,6 @@ function connect() {
     reconnectTimer = setTimeout(connect, wait);
   };
 }
-const collapsedPanels = { stats: false, controls: false };
 const mobileFullscreenQuery = typeof matchMedia === 'function'
   ? matchMedia('(max-width: 720px), (max-width: 960px) and (max-height: 600px)') : null;
 if (typeof ResizeObserver !== 'undefined') {
@@ -538,81 +608,6 @@ if (typeof ResizeObserver !== 'undefined') {
       '--controls-panel-height', `${$('printControlPanel').offsetHeight}px`);
   }).observe($('printControlPanel'));
 }
-function updateFullscreenPanels() {
-  const shell = document.querySelector('.shell');
-  const fullscreen = !bothView && document.fullscreenElement === shell;
-  const collapsible = fullscreen && (Boolean(mobileFullscreenQuery?.matches) || (saved.redesignedFullscreen === false && saved.streamerMode !== true));
-  shell.classList.toggle('fullscreen-controls-collapsed', collapsible && collapsedPanels.controls);
-  for (const [name, panelId] of [
-    ['stats', 'overlay'],
-    ['controls', 'printControlPanel']
-  ]) {
-    const collapsed = collapsible && collapsedPanels[name];
-    const panel = $(panelId), button = $(`${name}PanelToggle`);
-    panel.classList.toggle('fullscreen-collapsed', collapsed);
-    $(`${name}PanelContent`).inert = collapsed;
-    button.hidden = !collapsible;
-    button.setAttribute('aria-expanded', String(!collapsed));
-    const label = `${collapsed ? 'Show' : 'Hide'} ${name} panel`;
-    button.setAttribute('aria-label', label);
-    button.title = label;
-    button.textContent = (name === 'stats') !== collapsed ? '‹' : '›';
-  }
-}
-for (const name of ['stats', 'controls']) {
-  $(`${name}PanelToggle`).onclick = () => {
-    collapsedPanels[name] = !collapsedPanels[name];
-    updateFullscreenPanels();
-  };
-}
-updateFullscreenPanels();
-function updateFullscreenLayoutButton() {
-  const redesigned = saved.redesignedFullscreen !== false;
-  const button = $('fullscreenLayoutButton');
-  const label = `Use ${redesigned ? 'original' : 'redesigned'} fullscreen layout`;
-  button.setAttribute('aria-pressed', String(redesigned));
-  button.setAttribute('aria-label', label);
-  button.title = label;
-}
-updateFullscreenLayoutButton();
-$('fullscreenLayoutButton').onclick = () => {
-  saved.redesignedFullscreen = saved.redesignedFullscreen === false;
-  persistSettings('redesignedFullscreen');
-  updateFullscreenLayoutButton();
-  layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
-  updateFullscreenPanels();
-};
-function updateStreamerButton() {
-  const button = $('streamerButton'), on = saved.streamerMode === true;
-  const label = `${on ? 'Disable' : 'Enable'} streamer mode`;
-  button.setAttribute('aria-pressed', String(on));
-  button.setAttribute('aria-label', label);
-  button.title = `${label} (minimal full screen layout)`;
-}
-updateStreamerButton();
-// In streamer mode the header and cursor fade away when the pointer is idle.
-let streamerIdleTimer;
-function wakeStreamerChrome() {
-  const shell = document.querySelector('.shell');
-  shell.classList.add('streamer-awake');
-  clearTimeout(streamerIdleTimer);
-  streamerIdleTimer = setTimeout(() => {
-    if (shell.querySelector('header:hover, header:focus-within')) wakeStreamerChrome();
-    else shell.classList.remove('streamer-awake');
-  }, 2500);
-}
-document.addEventListener('pointermove', () => {
-  if (document.querySelector('.shell').classList.contains('streamer-mode')) wakeStreamerChrome();
-});
-$('streamerButton').onclick = async () => {
-  saved.streamerMode = saved.streamerMode !== true;
-  persistSettings('streamerMode');
-  updateStreamerButton();
-  const shell = document.querySelector('.shell');
-  layoutFullscreenDock(document.fullscreenElement === shell && !bothView);
-  updateFullscreenPanels();
-  wakeStreamerChrome();
-};
 for (const setting of ['lockTemperaturesDuringPrint', 'lockFansDuringPrint']) {
   $(setting).checked = saved[setting] === true;
   $(setting).onchange = () => {
@@ -650,6 +645,7 @@ $('cameraSource').onchange = () => {
   syncCameraPicker();
 };
 $('cameraDevice').onchange = () => { $('cameraUrl').value = $('cameraDevice').value; };
+$('cameraDualToggle').onchange = () => { $('cameraDual').value = $('cameraDualToggle').checked ? '1' : ''; };
 $('printerModel').onchange = () => {
   cancelSerialProbe(true);
   settingsDrafts[editingModel] = Object.fromEntries(connectionFields.map(key => [key, $(key).value]));
@@ -668,7 +664,6 @@ $('lightToggle').onclick = () => { const next = !currentLightOn; updateLightStat
 $('stopPrint').onclick = () => controlPrint(130, 'stopPrint', 'Stop');
 $('resumePrint').onclick = () => controlPrint(131, 'resumePrint', 'Resume');
 $('pausePrint').onclick = () => controlPrint(129, 'pausePrint', 'Pause');
-$('refreshButton').onclick = () => { retryDelay = 1500; setConnection('Refreshing printer connection…'); stopConnection(true); connect(); };
 $('fullscreenButton').onclick = async () => {
   try { document.fullscreenElement ? await document.exitFullscreen() : await document.querySelector('.shell').requestFullscreen(); }
   catch { show('printControlStatus', 'Fullscreen is not available in this browser.'); }
@@ -699,35 +694,7 @@ document.addEventListener('fullscreenchange', () => {
   $('fullscreenButton').textContent = fullscreen ? '⛶' : '⛶';
   if (fullscreen && !bothView) $('printerSwitch').before($('lightToggle'));
   else $('camera').after($('lightToggle'));
-  layoutFullscreenDock(fullscreen && !bothView);
-  updateFullscreenPanels();
 });
-mobileFullscreenQuery?.addEventListener('change', () => {
-  layoutFullscreenDock(document.fullscreenElement === document.querySelector('.shell') && !bothView);
-  updateFullscreenPanels();
-});
-let devicePanelWasOpen = false, fullscreenDockActive = false;
-function layoutFullscreenDock(fullscreen) {
-  const dock = $('fullscreenDock');
-  fullscreen = fullscreen && !mobileFullscreenQuery?.matches
-    && (saved.redesignedFullscreen !== false || saved.streamerMode === true);
-  document.querySelector('.shell').classList.toggle('desktop-fullscreen', fullscreen);
-  document.querySelector('.shell').classList.toggle('streamer-mode', fullscreen && saved.streamerMode === true);
-  if (fullscreen && !fullscreenDockActive) {
-    devicePanelWasOpen = $('devicePanel').open;
-    $('fullscreenTemperatures').append($('devicePanel'));
-    dock.append($('overlay'));
-    dock.append($('printControlPanel'));
-    $('devicePanel').open = true;
-  } else if (!fullscreen && fullscreenDockActive) {
-    document.querySelector('.print-controls').after($('devicePanel'));
-    document.querySelector('.camera').append($('printControlPanel'));
-    $('replayPanel').after($('overlay'));
-    $('devicePanel').open = devicePanelWasOpen;
-  }
-  fullscreenDockActive = fullscreen;
-  dock.hidden = !fullscreen;
-}
 $('settingsDialog').addEventListener('close', () => cancelSerialProbe(true));
 $('serialNumber').addEventListener('input', () => cancelSerialProbe(true));
 $('closeButton').onclick = () => $('settingsDialog').close();
@@ -745,6 +712,7 @@ $('settingsForm').addEventListener('invalid', event => {
 $('settingsForm').onsubmit = e => {
   e.preventDefault();
   saved.printerModel = embedded ? embeddedModel : $('printerModel').value; saved.accessCode = $('accessCode').value.trim(); saved.printerIp = $('printerIp').value.trim(); saved.serialNumber = $('serialNumber').value.trim(); saved.cameraUrl = $('cameraUrl').value.trim();
+  saved.cameraDual = isLocalCamera(saved.cameraUrl) && $('cameraDual').value === '1' ? '1' : '';
   saveActiveProfile();
   updatePrinterSwitch();
   $('settingsNotice').hidden = true;
@@ -756,6 +724,9 @@ $('settingsForm').onsubmit = e => {
 };
 $('camera').onerror = () => {
   $('camera').hidden = true;
+  // In dual view the local camera may still be live; keep it up.
+  placePip();
+  if ($('cameraLocal')?.hidden === false) return;
   $('cameraEmpty').hidden = false;
   $('cameraOfflineMessage').textContent = 'Camera stream unavailable. Check the camera URL or that the printer camera is enabled.';
 };

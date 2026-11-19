@@ -1,6 +1,6 @@
 // Fetch current application files; retain a fallback for offline use.
-const APP_CACHE = 'centauri-dashboard-v2';
-const APP_FILES = ['/', '/dashboard.html', '/dashboard.css', '/dashboard.js', '/themes.js', '/themes.css', '/star-wars.css', '/x-wing.svg', '/lightsaber-cursor.svg', '/lightsaber-cursor-active.svg', '/magic.css', '/magic.js', '/cc2.js', '/replay.js'];
+const APP_CACHE = 'centauri-dashboard-v3';
+const APP_FILES = ['/', '/dashboard.html', '/dashboard.css', '/dashboard.js', '/cc2.js', '/replay.js'];
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(APP_CACHE).then(async cache => {
         await Promise.allSettled(APP_FILES.map(url => cache.add(new Request(url, { cache: 'reload' }))));

@@ -49,10 +49,6 @@ The service shares each replay by printer model and configured printer address. 
 
 Replay requires Docker and an HTTP LAN MJPEG camera reachable from its container. Custom HTTPS cameras and other video formats are not supported. Each recording is capped at 2 GiB; if full, capture stops and earlier footage stays available until cleanup. Camera interruptions are retried, and gaps are skipped during playback. This is a sampled replay, not a full-frame-rate video export.
 
-## Appearance themes
-
-In Settings, use **Theme** to choose **Original**, **Harry Potter**, or **Star Wars**. Star Wars adds a starfield, Rebel Command styling, a lightsaber-inspired progress bar, and a camera standby screen. Changes apply immediately and save automatically in this browser, independently of printer connection settings. Original is the default unless a different theme has been selected and saved. Original restores the base dashboard styling and disables theme decorations and effects. Theme changes also synchronize across same-origin tabs and dual-printer panels.
-
 ## Troubleshooting
 
 - **Cannot connect:** Check the printer's power, IP address, serial number, and network/firewall access. For CC2, also check LAN Only mode and the access code.

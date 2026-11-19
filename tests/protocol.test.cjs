@@ -89,33 +89,6 @@ test('orientation locking skips desktop and tolerates unsupported mobile browser
   await t.run('delete globalThis.screen; updateFullscreenOrientation(true)');
 });
 
-test('mobile fullscreen panels collapse independently and restore interaction outside fullscreen', () => {
-  const t = setup(cc2);
-  t.run('mobileFullscreenQuery.matches = true');
-  assert.equal(t.element('statsPanelToggle').hidden, true);
-  t.run("document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
-  assert.equal(t.element('statsPanelToggle').hidden, false);
-  t.element('statsPanelToggle').onclick();
-  assert.equal(t.element('statsPanelContent').inert, true);
-  assert.equal(t.element('controlsPanelContent').inert, false);
-  assert.equal(t.element('statsPanelToggle').title, 'Show stats panel');
-  t.element('controlsPanelToggle').onclick();
-  assert.equal(t.element('controlsPanelContent').inert, true);
-  t.element('statsPanelToggle').onclick();
-  assert.equal(t.element('statsPanelContent').inert, false);
-  t.run('document.fullscreenElement = null; updateFullscreenPanels()');
-  assert.equal(t.element('controlsPanelContent').inert, false);
-  assert.equal(t.element('controlsPanelToggle').hidden, true);
-});
-
-test('removed visibility preferences do not hide panels or mobile collapse controls', () => {
-  const t = setup({ ...cc2 });
-  t.run("mobileFullscreenQuery.matches = true; document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
-  assert.equal(t.element('statsPanelToggle').hidden, false);
-  assert.equal(t.element('controlsPanelToggle').hidden, false);
-  for (const id of ['overlay', 'printControlPanel', 'temperaturesPanel', 'lightToggle']) assert.notEqual(t.element(id).hidden, true);
-});
-
 test('saving a second printer preserves the first and enables persistent quick switching', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board', cameraUrl: 'http://cc1/camera' });
   assert.equal(t.element('printerSwitch').hidden, true);
@@ -549,13 +522,6 @@ test('file discovery skips the server and explains a silent WebSocket probe', ()
   assert.match(t.element('settingsNotice').textContent, /Docker/);
 });
 
-test('combined fullscreen keeps parent panel toggles hidden', () => {
-  const t = setup({ ...cc2, profiles: { cc1: { printerIp: '192.168.1.2', serialNumber: 'board' } } });
-  t.run("showBothPrinters(); document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
-  assert.equal(t.element('statsPanelToggle').hidden, true);
-  assert.equal(t.element('controlsPanelToggle').hidden, true);
-});
-
 test('device controls validate CC1 targets, correlate ACKs, and clear on disconnect', () => {
   const t = setup({ printerIp: '192.168.1.2', serialNumber: 'board' });
   const socket = t.sockets[0]; socket.readyState = 1; socket.onopen();
@@ -722,64 +688,9 @@ test('fullscreen gauges follow measured temperatures, retain partial readings, a
   assert.equal(t.element('bedGaugeValue').textContent, '—');
 });
 
-test('mobile fullscreen keeps original panels and restores them when resizing from desktop', () => {
-  const t = setup({});
-  t.element('devicePanel').open = false;
-  t.run('mobileFullscreenQuery.matches = true; layoutFullscreenDock(true)');
-  assert.equal(t.element('fullscreenDock').hidden, true);
-  assert.equal(t.run('fullscreenDockActive'), false);
-  assert.equal(t.element('devicePanel').open, false);
-  t.run('mobileFullscreenQuery.matches = false; layoutFullscreenDock(true)');
-  assert.equal(t.element('fullscreenDock').hidden, false);
-  assert.equal(t.element('devicePanel').open, true);
-  t.run('layoutFullscreenDock(true); mobileFullscreenQuery.matches = true; layoutFullscreenDock(true)');
-  assert.equal(t.element('fullscreenDock').hidden, true);
-  assert.equal(t.element('devicePanel').open, false);
-  assert.equal(t.run('fullscreenDockActive'), false);
-});
-
-test('desktop fullscreen hides collapse arrows and expands previously collapsed mobile panels', () => {
-  const t = setup(cc2);
-  t.run("mobileFullscreenQuery.matches = true; document.fullscreenElement = document.querySelector('.shell'); updateFullscreenPanels()");
-  t.element('statsPanelToggle').onclick();
-  t.element('controlsPanelToggle').onclick();
-  t.run('mobileFullscreenQuery.matches = false; updateFullscreenPanels()');
-  for (const name of ['stats', 'controls']) {
-    assert.equal(t.element(name + 'PanelToggle').hidden, true);
-    assert.equal(t.element(name + 'PanelContent').inert, false);
-  }
-  t.run('mobileFullscreenQuery.matches = true; updateFullscreenPanels()');
-  assert.equal(t.element('statsPanelToggle').hidden, false);
-  assert.equal(t.element('statsPanelContent').inert, true);
-});
-
-test('fullscreen layout button switches immediately, persists, and restores original controls', () => {
+test('fullscreen has no layout toggle, collapse arrows or streamer mode', () => {
   const html = fs.readFileSync('dashboard.html', 'utf8');
-  const dashboardScript = fs.readFileSync('dashboard.js', 'utf8');
-  assert.doesNotMatch(html, /id="redesignedFullscreen"/);
-  assert.match(html, /id="fullscreenLayoutButton"/);
-  assert.match(dashboardScript, /\$\('printerSwitch'\)\.before\(\$\('lightToggle'\)\)/);
-  const t = setup(cc2);
-  assert.equal(t.element('fullscreenLayoutButton').title, 'Use original fullscreen layout');
-  t.run("document.fullscreenElement = document.querySelector('.shell'); layoutFullscreenDock(true); updateFullscreenPanels()");
-  assert.equal(t.run('fullscreenDockActive'), true);
-  t.element('fullscreenLayoutButton').onclick();
-  assert.equal(t.run('fullscreenDockActive'), false);
-  assert.equal(t.element('fullscreenDock').hidden, true);
-  assert.equal(t.element('statsPanelToggle').hidden, false);
-  assert.equal(t.stored().redesignedFullscreen, false);
-  assert.equal(t.element('fullscreenLayoutButton').title, 'Use redesigned fullscreen layout');
-  const restored = setup({ ...cc2, redesignedFullscreen: false });
-  assert.equal(restored.element('fullscreenLayoutButton').title, 'Use redesigned fullscreen layout');
-  restored.run('layoutFullscreenDock(true)');
-  assert.equal(restored.run('fullscreenDockActive'), false);
-  t.element('fullscreenLayoutButton').onclick();
-  assert.equal(t.run('fullscreenDockActive'), true);
-  assert.equal(t.element('statsPanelToggle').hidden, true);
-  t.run('mobileFullscreenQuery.matches = true');
-  t.element('fullscreenLayoutButton').onclick();
-  assert.equal(t.run('fullscreenDockActive'), false);
-  assert.equal(t.element('statsPanelToggle').hidden, false);
+  assert.doesNotMatch(html, /fullscreenLayoutButton|panel-toggle|streamerButton|fullscreenDock/);
 });
 
 test('replay follows confirmed print lifecycle and ignores connection resets', () => {
